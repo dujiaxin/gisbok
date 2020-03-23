@@ -1,8 +1,3 @@
-.pdm.toml
-.pytype
-__pypackages__
-data
-sample.csv
 
 # Created by https://www.gitignore.io/api/python,emacs,macos
 # Edit at https://www.gitignore.io/?templates=python,emacs,macos
