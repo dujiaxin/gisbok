@@ -1,0 +1,279 @@
+[[package]]
+name = "certifi"
+sections = ["default"]
+version = "2019.11.28"
+marker = "python_version >= \"3.6\""
+summary = "Python package for providing Mozilla's CA Bundle."
+
+[[package]]
+name = "chardet"
+sections = ["default"]
+version = "3.0.4"
+marker = "python_version >= \"3.6\""
+summary = "Universal encoding detector for Python 2 and 3"
+
+[[package]]
+name = "dataclasses-json"
+sections = ["default"]
+version = "0.4.2"
+marker = "python_version >= \"3.6\""
+summary = "Easily serialize dataclasses to and from JSON"
+
+[package.dependencies]
+marshmallow = "<4.0.0,>=3.3.0"
+marshmallow-enum = "<2.0.0,>=1.5.1"
+typing-inspect = ">=0.4.0"
+stringcase = "<2.0.0,==1.2.0"
+
+[[package]]
+name = "h11"
+sections = ["default"]
+version = "0.9.0"
+marker = "python_version >= \"3.6\""
+summary = "A pure-Python, bring-your-own-I/O implementation of HTTP/1.1"
+
+[[package]]
+name = "h2"
+sections = ["default"]
+version = "3.2.0"
+marker = "python_version >= \"3.6\""
+summary = "HTTP/2 State-Machine based protocol implementation"
+
+[package.dependencies]
+hyperframe = "<6,>=5.2.0"
+hpack = "<4,>=3.0"
+
+[[package]]
+name = "hpack"
+sections = ["default"]
+version = "3.0.0"
+marker = "python_version >= \"3.6\""
+summary = "Pure-Python HPACK header compression"
+
+[[package]]
+name = "hstspreload"
+sections = ["default"]
+version = "2020.3.17"
+marker = "python_version >= \"3.6\""
+summary = "Chromium HSTS Preload list as a Python package and updated daily"
+
+[[package]]
+name = "httpx"
+sections = ["default"]
+version = "0.12.1"
+marker = "python_version >= \"3.6\""
+summary = "The next generation HTTP client."
+
+[package.dependencies]
+certifi = "*"
+hstspreload = "*"
+chardet = "==3.*"
+h11 = "<0.10,>=0.8"
+h2 = "==3.*"
+idna = "==2.*"
+rfc3986 = "<2,>=1.3"
+sniffio = "==1.*"
+urllib3 = "==1.*"
+
+[[package]]
+name = "hyperframe"
+sections = ["default"]
+version = "5.2.0"
+marker = "python_version >= \"3.6\""
+summary = "HTTP/2 framing layer for Python"
+
+[[package]]
+name = "idna"
+sections = ["default"]
+version = "2.9"
+marker = "python_version >= \"3.6\""
+summary = "Internationalized Domain Names in Applications (IDNA)"
+
+[[package]]
+name = "lxml"
+sections = ["default"]
+version = "4.5.0"
+marker = "python_version >= \"2.7\" and python_version not in \"3.0, 3.1, 3.2, 3.3, 3.4\""
+summary = "Powerful and Pythonic XML processing library combining libxml2/libxslt with the ElementTree API."
+
+[[package]]
+name = "marshmallow"
+sections = ["default"]
+version = "3.5.1"
+marker = "python_version >= \"3.6\""
+summary = "A lightweight library for converting complex datatypes to and from native Python datatypes."
+
+[[package]]
+name = "marshmallow-enum"
+sections = ["default"]
+version = "1.5.1"
+marker = "python_version >= \"3.6\""
+summary = "Enum field for Marshmallow"
+
+[package.dependencies]
+marshmallow = ">=2.0.0"
+
+[[package]]
+name = "mypy-extensions"
+sections = ["default"]
+version = "0.4.3"
+marker = "python_version >= \"3.6\""
+summary = "Experimental type system extensions for programs checked with the mypy typechecker."
+
+[[package]]
+name = "rfc3986"
+sections = ["default"]
+version = "1.3.2"
+marker = "python_version >= \"3.6\""
+summary = "Validating URI References per RFC 3986"
+
+[[package]]
+name = "sniffio"
+sections = ["default"]
+version = "1.1.0"
+marker = "python_version >= \"3.6\""
+summary = "Sniff out which async library your code is running under"
+
+[[package]]
+name = "stringcase"
+sections = ["default"]
+version = "1.2.0"
+marker = "python_version >= \"3.6\""
+summary = "String case converter."
+
+[[package]]
+name = "typing-extensions"
+sections = ["default"]
+version = "3.7.4.1"
+marker = "python_version >= \"3.6\""
+summary = "Backported and Experimental Type Hints for Python 3.5+"
+
+[[package]]
+name = "typing-inspect"
+sections = ["default"]
+version = "0.5.0"
+marker = "python_version >= \"3.6\""
+summary = "Runtime inspection utilities for typing module."
+
+[package.dependencies]
+mypy-extensions = ">=0.3.0"
+typing-extensions = ">=3.7.4"
+
+[[package]]
+name = "urllib3"
+sections = ["default"]
+version = "1.25.8"
+marker = "python_version >= \"3.6\" and python_version < \"4.0\""
+summary = "HTTP library with thread-safe connection pooling, file post, and more."
+
+[metadata]
+"certifi 2019.11.28" = [
+    {file = "certifi-2019.11.28.tar.gz", hash = "sha256:25b64c7da4cd7479594d035c08c2d809eb4aab3a26e5a990ea98cc450c320f1f"},
+    {file = "certifi-2019.11.28-py2.py3-none-any.whl", hash = "sha256:017c25db2a153ce562900032d5bc68e9f191e44e9a0f762f373977de9df1fbb3"},
+]
+"chardet 3.0.4" = [
+    {file = "chardet-3.0.4.tar.gz", hash = "sha256:84ab92ed1c4d4f16916e05906b6b75a6c0fb5db821cc65e70cbd64a3e2a5eaae"},
+    {file = "chardet-3.0.4-py2.py3-none-any.whl", hash = "sha256:fc323ffcaeaed0e0a02bf4d117757b98aed530d9ed4531e3e15460124c106691"},
+]
+"dataclasses-json 0.4.2" = [
+    {file = "dataclasses-json-0.4.2.tar.gz", hash = "sha256:65ac9ae2f7ec152ee01bf42c8c024736d4cd6f6fb761502dec92bd553931e3d9"},
+    {file = "dataclasses_json-0.4.2-py3-none-any.whl", hash = "sha256:dbb53ebbac30ef45f44f5f436b21bd5726a80a14e1a193958864229100271372"},
+]
+"h11 0.9.0" = [
+    {file = "h11-0.9.0.tar.gz", hash = "sha256:33d4bca7be0fa039f4e84d50ab00531047e53d6ee8ffbc83501ea602c169cae1"},
+    {file = "h11-0.9.0-py2.py3-none-any.whl", hash = "sha256:4bc6d6a1238b7615b266ada57e0618568066f57dd6fa967d1290ec9309b2f2f1"},
+]
+"h2 3.2.0" = [
+    {file = "h2-3.2.0.tar.gz", hash = "sha256:875f41ebd6f2c44781259005b157faed1a5031df3ae5aa7bcb4628a6c0782f14"},
+    {file = "h2-3.2.0-py2.py3-none-any.whl", hash = "sha256:61e0f6601fa709f35cdb730863b4e5ec7ad449792add80d1410d4174ed139af5"},
+]
+"hpack 3.0.0" = [
+    {file = "hpack-3.0.0.tar.gz", hash = "sha256:8eec9c1f4bfae3408a3f30500261f7e6a65912dc138526ea054f9ad98892e9d2"},
+    {file = "hpack-3.0.0-py2.py3-none-any.whl", hash = "sha256:0edd79eda27a53ba5be2dfabf3b15780928a0dff6eb0c60a3d6767720e970c89"},
+]
+"hstspreload 2020.3.17" = [
+    {file = "hstspreload-2020.3.17.tar.gz", hash = "sha256:a67ac08615ec05ff0b8c25668072a9c311aa1317c16f4612ccb69611276c2371"},
+]
+"httpx 0.12.1" = [
+    {file = "httpx-0.12.1.tar.gz", hash = "sha256:405b4749f597b1f45cae5bffc17b23dc251cce30a0c4c8126f1007b9e728a615"},
+    {file = "httpx-0.12.1-py3-none-any.whl", hash = "sha256:ce51c8e8ed2834447fde5a94650299fd74017b7da69cc786b6421fefda09a393"},
+]
+"hyperframe 5.2.0" = [
+    {file = "hyperframe-5.2.0.tar.gz", hash = "sha256:a9f5c17f2cc3c719b917c4f33ed1c61bd1f8dfac4b1bd23b7c80b3400971b41f"},
+    {file = "hyperframe-5.2.0-py2.py3-none-any.whl", hash = "sha256:5187962cb16dcc078f23cb5a4b110098d546c3f41ff2d4038a9896893bbd0b40"},
+]
+"idna 2.9" = [
+    {file = "idna-2.9.tar.gz", hash = "sha256:7588d1c14ae4c77d74036e8c22ff447b26d0fde8f007354fd48a7814db15b7cb"},
+    {file = "idna-2.9-py2.py3-none-any.whl", hash = "sha256:a068a21ceac8a4d63dbfd964670474107f541babbd2250d61922f029858365fa"},
+]
+"lxml 4.5.0" = [
+    {file = "lxml-4.5.0.tar.gz", hash = "sha256:8620ce80f50d023d414183bf90cc2576c2837b88e00bea3f33ad2630133bbb60"},
+    {file = "lxml-4.5.0-cp27-cp27m-macosx_10_9_x86_64.whl", hash = "sha256:0701f7965903a1c3f6f09328c1278ac0eee8f56f244e66af79cb224b7ef3801c"},
+    {file = "lxml-4.5.0-cp27-cp27m-manylinux1_i686.whl", hash = "sha256:06d4e0bbb1d62e38ae6118406d7cdb4693a3fa34ee3762238bcb96c9e36a93cd"},
+    {file = "lxml-4.5.0-cp27-cp27m-manylinux1_x86_64.whl", hash = "sha256:5828c7f3e615f3975d48f40d4fe66e8a7b25f16b5e5705ffe1d22e43fb1f6261"},
+    {file = "lxml-4.5.0-cp27-cp27m-win32.whl", hash = "sha256:afdb34b715daf814d1abea0317b6d672476b498472f1e5aacbadc34ebbc26e89"},
+    {file = "lxml-4.5.0-cp27-cp27m-win_amd64.whl", hash = "sha256:585c0869f75577ac7a8ff38d08f7aac9033da2c41c11352ebf86a04652758b7a"},
+    {file = "lxml-4.5.0-cp27-cp27mu-manylinux1_i686.whl", hash = "sha256:8a0ebda56ebca1a83eb2d1ac266649b80af8dd4b4a3502b2c1e09ac2f88fe128"},
+    {file = "lxml-4.5.0-cp27-cp27mu-manylinux1_x86_64.whl", hash = "sha256:fe976a0f1ef09b3638778024ab9fb8cde3118f203364212c198f71341c0715ca"},
+    {file = "lxml-4.5.0-cp35-cp35m-manylinux1_i686.whl", hash = "sha256:7bc1b221e7867f2e7ff1933165c0cec7153dce93d0cdba6554b42a8beb687bdb"},
+    {file = "lxml-4.5.0-cp35-cp35m-manylinux1_x86_64.whl", hash = "sha256:d068f55bda3c2c3fcaec24bd083d9e2eede32c583faf084d6e4b9daaea77dde8"},
+    {file = "lxml-4.5.0-cp35-cp35m-win32.whl", hash = "sha256:e4aa948eb15018a657702fee0b9db47e908491c64d36b4a90f59a64741516e77"},
+    {file = "lxml-4.5.0-cp35-cp35m-win_amd64.whl", hash = "sha256:1f2c4ec372bf1c4a2c7e4bb20845e8bcf8050365189d86806bad1e3ae473d081"},
+    {file = "lxml-4.5.0-cp36-cp36m-macosx_10_9_x86_64.whl", hash = "sha256:5d467ce9c5d35b3bcc7172c06320dddb275fea6ac2037f72f0a4d7472035cea9"},
+    {file = "lxml-4.5.0-cp36-cp36m-manylinux1_i686.whl", hash = "sha256:95e67224815ef86924fbc2b71a9dbd1f7262384bca4bc4793645794ac4200717"},
+    {file = "lxml-4.5.0-cp36-cp36m-manylinux1_x86_64.whl", hash = "sha256:ebec08091a22c2be870890913bdadd86fcd8e9f0f22bcb398abd3af914690c15"},
+    {file = "lxml-4.5.0-cp36-cp36m-win32.whl", hash = "sha256:deadf4df349d1dcd7b2853a2c8796593cc346600726eff680ed8ed11812382a7"},
+    {file = "lxml-4.5.0-cp36-cp36m-win_amd64.whl", hash = "sha256:f2b74784ed7e0bc2d02bd53e48ad6ba523c9b36c194260b7a5045071abbb1012"},
+    {file = "lxml-4.5.0-cp37-cp37m-macosx_10_9_x86_64.whl", hash = "sha256:fa071559f14bd1e92077b1b5f6c22cf09756c6de7139370249eb372854ce51e6"},
+    {file = "lxml-4.5.0-cp37-cp37m-manylinux1_i686.whl", hash = "sha256:edc15fcfd77395e24543be48871c251f38132bb834d9fdfdad756adb6ea37679"},
+    {file = "lxml-4.5.0-cp37-cp37m-manylinux1_x86_64.whl", hash = "sha256:fd52e796fee7171c4361d441796b64df1acfceb51f29e545e812f16d023c4bbc"},
+    {file = "lxml-4.5.0-cp37-cp37m-win32.whl", hash = "sha256:90ed0e36455a81b25b7034038e40880189169c308a3df360861ad74da7b68c1a"},
+    {file = "lxml-4.5.0-cp37-cp37m-win_amd64.whl", hash = "sha256:df533af6f88080419c5a604d0d63b2c33b1c0c4409aba7d0cb6de305147ea8c8"},
+    {file = "lxml-4.5.0-cp38-cp38-macosx_10_9_x86_64.whl", hash = "sha256:b4b2c63cc7963aedd08a5f5a454c9f67251b1ac9e22fd9d72836206c42dc2a72"},
+    {file = "lxml-4.5.0-cp38-cp38-manylinux1_i686.whl", hash = "sha256:e5d842c73e4ef6ed8c1bd77806bf84a7cb535f9c0cf9b2c74d02ebda310070e1"},
+    {file = "lxml-4.5.0-cp38-cp38-manylinux1_x86_64.whl", hash = "sha256:63dbc21efd7e822c11d5ddbedbbb08cd11a41e0032e382a0fd59b0b08e405a3a"},
+    {file = "lxml-4.5.0-cp38-cp38-win32.whl", hash = "sha256:4235bc124fdcf611d02047d7034164897ade13046bda967768836629bc62784f"},
+    {file = "lxml-4.5.0-cp38-cp38-win_amd64.whl", hash = "sha256:d5b3c4b7edd2e770375a01139be11307f04341ec709cf724e0f26ebb1eef12c3"},
+]
+"marshmallow 3.5.1" = [
+    {file = "marshmallow-3.5.1.tar.gz", hash = "sha256:90854221bbb1498d003a0c3cc9d8390259137551917961c8b5258c64026b2f85"},
+    {file = "marshmallow-3.5.1-py2.py3-none-any.whl", hash = "sha256:ac2e13b30165501b7d41fc0371b8df35944f5849769d136f20e2c5f6cdc6e665"},
+]
+"marshmallow-enum 1.5.1" = [
+    {file = "marshmallow-enum-1.5.1.tar.gz", hash = "sha256:38e697e11f45a8e64b4a1e664000897c659b60aa57bfa18d44e226a9920b6e58"},
+    {file = "marshmallow_enum-1.5.1-py2.py3-none-any.whl", hash = "sha256:57161ab3dbfde4f57adeb12090f39592e992b9c86d206d02f6bd03ebec60f072"},
+]
+"mypy-extensions 0.4.3" = [
+    {file = "mypy_extensions-0.4.3.tar.gz", hash = "sha256:2d82818f5bb3e369420cb3c4060a7970edba416647068eb4c5343488a6c604a8"},
+    {file = "mypy_extensions-0.4.3-py2.py3-none-any.whl", hash = "sha256:090fedd75945a69ae91ce1303b5824f428daf5a028d2f6ab8a299250a846f15d"},
+]
+"rfc3986 1.3.2" = [
+    {file = "rfc3986-1.3.2.tar.gz", hash = "sha256:0344d0bd428126ce554e7ca2b61787b6a28d2bbd19fc70ed2dd85efe31176405"},
+    {file = "rfc3986-1.3.2-py2.py3-none-any.whl", hash = "sha256:df4eba676077cefb86450c8f60121b9ae04b94f65f85b69f3f731af0516b7b18"},
+]
+"sniffio 1.1.0" = [
+    {file = "sniffio-1.1.0.tar.gz", hash = "sha256:8e3810100f69fe0edd463d02ad407112542a11ffdc29f67db2bf3771afb87a21"},
+    {file = "sniffio-1.1.0-py3-none-any.whl", hash = "sha256:20ed6d5b46f8ae136d00b9dcb807615d83ed82ceea6b2058cecb696765246da5"},
+]
+"stringcase 1.2.0" = [
+    {file = "stringcase-1.2.0.tar.gz", hash = "sha256:48a06980661908efe8d9d34eab2b6c13aefa2163b3ced26972902e3bdfd87008"},
+]
+"typing-extensions 3.7.4.1" = [
+    {file = "typing_extensions-3.7.4.1.tar.gz", hash = "sha256:091ecc894d5e908ac75209f10d5b4f118fbdb2eb1ede6a63544054bb1edb41f2"},
+    {file = "typing_extensions-3.7.4.1-py2-none-any.whl", hash = "sha256:910f4656f54de5993ad9304959ce9bb903f90aadc7c67a0bef07e678014e892d"},
+    {file = "typing_extensions-3.7.4.1-py3-none-any.whl", hash = "sha256:cf8b63fedea4d89bab840ecbb93e75578af28f76f66c35889bd7065f5af88575"},
+]
+"typing-inspect 0.5.0" = [
+    {file = "typing_inspect-0.5.0.tar.gz", hash = "sha256:811b44f92e780b90cfe7bac94249a4fae87cfaa9b40312765489255045231d9c"},
+    {file = "typing_inspect-0.5.0-py2-none-any.whl", hash = "sha256:75c97b7854426a129f3184c68588db29091ff58e6908ed520add1d52fc44df6e"},
+    {file = "typing_inspect-0.5.0-py3-none-any.whl", hash = "sha256:c6ed1cd34860857c53c146a6704a96da12e1661087828ce350f34addc6e5eee3"},
+]
+"urllib3 1.25.8" = [
+    {file = "urllib3-1.25.8.tar.gz", hash = "sha256:87716c2d2a7121198ebcb7ce7cccf6ce5e9ba539041cfbaeecfb641dc0bf6acc"},
+    {file = "urllib3-1.25.8-py2.py3-none-any.whl", hash = "sha256:2f3db8b19923a873b3e5256dc9c2dedfa883e33d87c690d9c7913e1f40673cdc"},
+]
+
+[root]
+content_hash = "md5:24d631de210bf3e9f0a597906b8dcc71"
+meta_version = "0.0.1"
+
