@@ -1,0 +1,24 @@
+[build-system]
+build-backend = "pdm.builders.api"
+requires = ["pdm"]
+
+[tool]
+[tool.pdm]
+author = "Nasy <nasyxx+git@gmail.com>"
+description = ""
+homepage = ""
+license = "MIT"
+name = "gisbok_crawler"
+python_requires = ">=3.7"
+version = "0.0.1"
+
+[tool.pdm.dependencies]
+httpx = "<1.0.0,>=0.12.1"
+lxml = "<5.0.0,>=4.5.0"
+dataclasses-json = "<1.0.0,>=0.4.2"
+
+[tool.pdm.dev-dependencies]
+
+
+[tool.black]
+line-length = 79
