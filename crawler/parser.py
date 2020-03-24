@@ -73,6 +73,7 @@ from pathlib import Path
 from dataclasses_json import dataclass_json
 from lxml.etree import _ElementTree as ET
 from lxml.html import parse as html_parse
+from tqdm import tqdm
 
 # Types
 from typing import Callable, List, Set, Tuple, TypeVar, Union
@@ -232,6 +233,7 @@ if __name__ == "__main__":
         writer = DictWriter(f, fieldnames=list(topic.to_dict().keys()))
         writer.writeheader()
 
-        for path in HTML_TOPIC_PATH.glob("*.html"):
+        files = tuple(HTML_TOPIC_PATH.glob("*.html"))
+        for path in tqdm(files):
             topic = Topic(path)
             writer.writerow(topic.to_dict())
