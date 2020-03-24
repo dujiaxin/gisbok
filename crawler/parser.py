@@ -89,7 +89,7 @@ class Author:
     # TODO
 
 
-@dataclass(init=False)
+@dataclass
 class Topic:
     # body: str
     doi: str
@@ -99,16 +99,22 @@ class Topic:
     learning_objectives: Tuple[str, ...]
     related_topics: Tuple[str, ...]
 
-    def __init__(self, path: Union[Path, str]) -> None:
-        """Initial function."""
-        etree = html_parse(str(path))
-        self.body = parse_body(etree)
-        self.doi = parse_doi(etree)
-        self.title = parse_title(etree)
-        self.abstract = parse_abstract(etree)
-        self.keywords = parse_keywords(etree)
-        self.learning_objectives = parse_learning_objectives(etree)
-        self.related_topics = parse_related_topics(etree)
+    @classmethod
+    def from_etree(cls, etree: ET) -> Topic:
+        """Initial function from etree."""
+        return cls(
+            parse_doi(etree),
+            parse_title(etree),
+            parse_abstract(etree),
+            parse_keywords(etree),
+            parse_learning_objectives(etree),
+            parse_related_topics(etree),
+        )
+
+    @classmethod
+    def from_path(cls, path: Union[Path, str]) -> Topic:
+        """Initial function from path."""
+        return cls.from_etree(html_parse(str(path)))
 
 
 def clean(text: str) -> str:
@@ -231,7 +237,7 @@ if __name__ == "__main__":
     ) as g:
         topics = [row for row in DictReader(g)]
         files = tuple(HTML_TOPIC_PATH.glob("*.html"))
-        ptopics = [Topic(path) for path in files]
+        ptopics = [Topic.from_path(path) for path in files]
 
         writer = DictWriter(
             f, fieldnames=["topic", "theme", "area", "learning_objective"]
