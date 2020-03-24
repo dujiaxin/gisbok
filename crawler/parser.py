@@ -70,7 +70,6 @@ from functools import wraps
 from pathlib import Path
 
 # Others
-from dataclasses_json import dataclass_json
 from lxml.etree import _ElementTree as ET
 from lxml.html import parse as html_parse
 from tqdm import tqdm
@@ -90,7 +89,6 @@ class Author:
     # TODO
 
 
-@dataclass_json
 @dataclass(init=False)
 class Topic:
     # body: str
