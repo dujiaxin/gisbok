@@ -93,8 +93,8 @@ def fetch_topic(client: Client, url: str, pbar: tqdm = None) -> None:
     """Fetch and save each topic original html."""
     path = DATA_PATH / "htmls" / Path(url).relative_to("/")
     path.parent.mkdir(parents=True, exist_ok=True)
-    with path.with_suffix(".html").open("w") as f:
-        f.write(client.get(f"{URL_BASE}{url}").text)
+    with path.with_suffix(".html").open("wb") as f:
+        f.write(client.get(f"{URL_BASE}{url}").content)
     if pbar:
         pbar.update()
 
