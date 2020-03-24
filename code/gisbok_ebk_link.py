@@ -4,6 +4,8 @@ import nltk
 from sklearn.feature_extraction.text import TfidfVectorizer, CountVectorizer
 import numpy as np
 import spacy
+from nltk.stem.porter import PorterStemmer
+from nltk import word_tokenize
 
 
 def get_stopwords():
@@ -15,31 +17,49 @@ def get_stopwords():
     return all_stopwords
 
 
+def stem_lines(line, ps=PorterStemmer()):
+    tokens = word_tokenize(line)
+    tokens = [word for word in tokens if len(word) > 1]
+    stemmed_tokens = [ps.stem(i) for i in tokens]
+    return ' '.join(stemmed_tokens)
+
+
 if __name__ == "__main__":
     gisbok = pd.read_csv('./gisbok_knowledgeArea_result.csv')
     ebk = pd.read_csv('./EBK.csv')
 
-    topics_ebk = ebk[["Competency","Topic","Sub-topic"]]
+    topics_ebk = ebk[["Topic"]]
+    topics_gisbok = gisbok[["topic"]]
     # gisbok_json = json.load(gisbok.to_json(orient='records'))
-    gisbok_docs = gisbok.to_csv().split('\r\n')
-    ebk_docs = topics_ebk.to_csv().split('\r\n')
+    gisbok_docs = gisbok.to_csv(index=False).split('\r\n')
+    ebk_docs = topics_ebk.to_csv(index=False).split('\r\n')
+    ps = PorterStemmer()
+
+    stems_gisbok = [stem_lines(i, ps) for i in gisbok_docs]
+    stems_ebk = [stem_lines(i, ps) for i in ebk_docs]
+
+    tfidf_vectorizer = TfidfVectorizer(stop_words=get_stopwords(),
+                                       token_pattern=u'(?ui)\\b\\w*[a-zA-Z]+\\w*\\b'
+                                       )
+
+    tfidf_vectorizer.fit(stems_gisbok + stems_ebk)
+    embedded_gisbok = tfidf_vectorizer.transform(stems_gisbok)
+    embedded_ebk = tfidf_vectorizer.transform(stems_ebk)
+
+    similarity_score_matrix = (embedded_gisbok * (embedded_ebk.T)).toarray()
+    index_very_similar = np.argwhere(
+        similarity_score_matrix > 0.1)  # similarity_score_matrix is a symetic square matrix
+    print(len(index_very_similar))
+    pairs = set()
+    for i in index_very_similar:
+        pairs.add(gisbok_docs[i[0]] + " ; " +ebk_docs[i[1]])
+    print("\n".join(pairs))
 
 
-    # tfidf_vectorizer = TfidfVectorizer(stop_words=get_stopwords())
-
-    nlp = spacy.load("en_core_web_lg")
-    gisbok_nlp = [nlp(i) for i in gisbok_docs]
-    ebk_nlp = [nlp(i) for i in ebk_docs]
-    for i, gis in enumerate(gisbok_nlp):
-        for j, ebk in enumerate(ebk_nlp):
-            if gis.similarity(ebk) >0.9:
-                print(i,j)
-
-
-    # embeded_docs = tfidf_vectorizer.fit_transform(all_docs)
-    # similarity_score_matrix = (embeded_docs * (embeded_docs.T)).toarray()
-    # index_very_similar = np.argwhere(
-    #     similarity_score_matrix > 0.5)  # similarity_score_matrix is a symetic square matrix
-    # print(index_very_similar)
-    # for i in index_very_similar:
-    #     print(all_docs[i[0]] + " ; " +all_docs[i[1]])
+    # nlp = spacy.load("en_core_web_lg")
+    # gisbok_nlp = [nlp(i) for i in gisbok_docs]
+    # ebk_nlp = [nlp(i) for i in ebk_docs]
+    # for i, gis in enumerate(gisbok_nlp):
+    #     for j, ebk in enumerate(ebk_nlp):
+    #         if gis.similarity(ebk) >0.9:
+    #             print(i,j)
