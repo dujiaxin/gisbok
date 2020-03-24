@@ -64,7 +64,7 @@ Definitions (needs extraction from Topic Description)
 The purpose of adding them into an owl file:
 """
 # Standard Library
-from csv import DictWriter
+from csv import DictReader, DictWriter
 from dataclasses import dataclass
 from functools import wraps
 from pathlib import Path
@@ -237,3 +237,17 @@ if __name__ == "__main__":
         for path in tqdm(files):
             topic = Topic(path)
             writer.writerow(topic.to_dict())
+
+    # Read and get learning objects
+    with open("sample.csv") as f, open(
+        "./gisbok_knowledgeArea_result.csv"
+    ) as g:
+        topics = [topic for topic in DictReader(f)]
+        # topics = [Topic.from_dict(topic) for topic in DictReader(f)]  # TODO
+        titles = [row["topic"] for row in DictReader(g)]
+
+        learning_objectives = []
+        for title in titles:
+            for topic in topics:
+                if title in topic["title"]:
+                    print(topic["learning_objectives"])
