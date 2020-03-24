@@ -227,7 +227,7 @@ def parse_topic_description(etree: ET) -> Tuple[str, ...]:
 
 
 if __name__ == "__main__":
-    with open("sample.csv", "w") as f:
+    with open("sample.csv", "w", encoding='utf-8') as f:
         # For header
         topic = Topic(next(HTML_TOPIC_PATH.glob("*.html")))
         writer = DictWriter(f, fieldnames=list(topic.to_dict().keys()))
@@ -239,8 +239,8 @@ if __name__ == "__main__":
             writer.writerow(topic.to_dict())
 
     # Read and get learning objects
-    with open("sample.csv") as f, open(
-        "./gisbok_knowledgeArea_result.csv"
+    with open("sample.csv", encoding='utf-8') as f, open(
+        "./gisbok_knowledgeArea_result.csv" , encoding='utf-8'
     ) as g:
         topics = [topic for topic in DictReader(f)]
         # topics = [Topic.from_dict(topic) for topic in DictReader(f)]  # TODO
