@@ -227,27 +227,23 @@ def parse_topic_description(etree: ET) -> Tuple[str, ...]:
 
 
 if __name__ == "__main__":
-    with open("sample.csv", "w", encoding='utf-8') as f:
-        # For header
-        topic = Topic(next(HTML_TOPIC_PATH.glob("*.html")))
-        writer = DictWriter(f, fieldnames=list(topic.to_dict().keys()))
+    # Write learning objectives
+    with open("sample.csv", "w", encoding="utf-8") as f, open(
+        "./gisbok_knowledgeArea_result.csv", encoding="utf-8"
+    ) as g:
+        topics = [row for row in DictReader(g)]
+        files = tuple(HTML_TOPIC_PATH.glob("*.html"))
+        ptopics = [Topic(path) for path in files]
+
+        writer = DictWriter(
+            f, fieldnames=["topic", "theme", "area", "learning_objective"]
+        )
         writer.writeheader()
 
-        files = tuple(HTML_TOPIC_PATH.glob("*.html"))
-        for path in tqdm(files):
-            topic = Topic(path)
-            writer.writerow(topic.to_dict())
-
-    # Read and get learning objects
-    with open("sample.csv", encoding='utf-8') as f, open(
-        "./gisbok_knowledgeArea_result.csv" , encoding='utf-8'
-    ) as g:
-        topics = [topic for topic in DictReader(f)]
-        # topics = [Topic.from_dict(topic) for topic in DictReader(f)]  # TODO
-        titles = [row["topic"] for row in DictReader(g)]
-
-        learning_objectives = []
-        for title in titles:
-            for topic in topics:
-                if title in topic["title"]:
-                    print(topic["learning_objectives"])
+        for topic in tqdm(topics):
+            for ptopic in ptopics:
+                if topic["topic"] in ptopic.title:
+                    for lo in ptopic.learning_objectives:
+                        topic["learning_objective"] = lo
+                        writer.writerow(topic)
+                    break
