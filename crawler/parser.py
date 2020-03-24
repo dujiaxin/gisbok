@@ -64,10 +64,10 @@ Definitions (needs extraction from Topic Description)
 The purpose of adding them into an owl file:
 """
 # Standard Library
-import re
 from csv import DictWriter
 from dataclasses import dataclass
 from functools import wraps
+from pathlib import Path
 
 # Others
 from dataclasses_json import dataclass_json
@@ -75,7 +75,12 @@ from lxml.etree import _ElementTree as ET
 from lxml.html import parse as html_parse
 
 # Types
-from typing import Callable, Set, Tuple, Union
+from typing import Callable, List, Set, Tuple, TypeVar, Union
+
+a = TypeVar("a")
+
+DATA_PATH = Path("./data")
+HTML_TOPIC_PATH = DATA_PATH / "htmls" / "bok-topics"
 
 
 @dataclass
@@ -95,8 +100,9 @@ class Topic:
     learning_objectives: Tuple[str, ...]
     related_topics: Tuple[str, ...]
 
-    def __init__(self, etree: ET) -> None:
+    def __init__(self, path: Union[Path, str]) -> None:
         """Initial function."""
+        etree = html_parse(str(path))
         self.body = parse_body(etree)
         self.doi = parse_doi(etree)
         self.title = parse_title(etree)
@@ -135,6 +141,22 @@ def cleantd(
     return wrapper
 
 
+def first(element: List[str]) -> str:
+    """Clean text."""
+    return element and element[0] or ""
+
+
+def firstd(func: Callable[[List[str]], str]) -> Callable[[ET], str]:
+    """Clean text decorator."""
+
+    @wraps(func)
+    def wrapper(etree: ET) -> a:
+        """Wrapper of func."""
+        return first(func(etree))
+
+    return wrapper
+
+
 @cleand
 def parse_body(etree: ET) -> str:
     """Parse all content."""
@@ -144,25 +166,28 @@ def parse_body(etree: ET) -> str:
 
 
 @cleand
+@firstd
 def parse_doi(etree: ET) -> str:
     """Parse DOI."""
     return etree.xpath(
         "//*[@id='info']//a[contains(@href, 'doi.org')]//text()"
-    )[0]
+    )
 
 
 @cleand
+@firstd
 def parse_title(etree: ET) -> str:
     """Parse title."""
-    return etree.xpath("//*[@id='page-title']/text()")[0]
+    return etree.xpath("//*[@id='page-title']/text()")
 
 
 @cleand
+@firstd
 def parse_abstract(etree: ET) -> str:
     """Parse abstract."""
     return etree.xpath(
         "//div[contains(@class, 'field-type-text-with-summary')]//p//text()"
-    )[0]
+    )
 
 
 def parse_attributes(etree: ET) -> str:
@@ -201,12 +226,12 @@ def parse_topic_description(etree: ET) -> Tuple[str, ...]:
 
 
 if __name__ == "__main__":
-    topic = Topic(
-        html_parse(
-            "./data/htmls/bok-topics/academic-developments-gist-english-speaking-countries-partial-history.html"
-        )
-    )
     with open("sample.csv", "w") as f:
+        # For header
+        topic = Topic(next(HTML_TOPIC_PATH.glob("*.html")))
         writer = DictWriter(f, fieldnames=list(topic.to_dict().keys()))
         writer.writeheader()
-        writer.writerow(topic.to_dict())
+
+        for path in HTML_TOPIC_PATH.glob("*.html"):
+            topic = Topic(path)
+            writer.writerow(topic.to_dict())
