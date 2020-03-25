@@ -35,15 +35,13 @@ def save_urls(topic_set):
             f.write(r.text)
 
 
-if __name__ == "__main__":
-    # save the web page to a html file
-    # topic_set = get_all_topics()
+def save_related_topics():
     onlyfiles = [f for f in listdir("./data") if isfile(join("./data", f))]
-    links={}
+    links = {}
     # read a html file and extract what you need using BeautifulSoup
     for file in onlyfiles:
         if file.startswith("gisbok_topic"):
-            with open("./data/"+file, "r", encoding='utf-8') as f:
+            with open("./data/" + file, "r", encoding='utf-8') as f:
                 html = f.read()
             soup = BeautifulSoup(html, "html.parser")
             learning_objectives = soup.find(class_="field-name-field-learning-objectives").find_all('li')
@@ -56,6 +54,22 @@ if __name__ == "__main__":
             rs = []
             for r in related_topics.find_all('a'):
                 rs.append(r.string)
-            links[title]=rs
+            links[title] = rs
     df = pd.DataFrame.from_dict(links)
     df.to_csv("./data/links.csv")
+
+
+if __name__ == "__main__":
+    # save the web page to a html file
+    # topic_set = get_all_topics()
+    gisbok = pd.read_csv('./gisbok_knowledgeArea_result.csv')
+    topics_gisbok = gisbok["topic"].to_list()
+    for topic in topics_gisbok:
+        with open("./data/gisbok_topic_" + topic.replace(" ","-").lower() + ".html", "r", encoding='utf-8') as f:
+            html = f.read()
+        soup = BeautifulSoup(html, "html.parser")
+        learning_objectives = soup.find(class_="field-name-field-learning-objectives").find_all('li')
+        for lo in learning_objectives:
+            print(lo.text)
+
+

@@ -25,30 +25,32 @@ def stem_lines(line, ps=PorterStemmer()):
 
 
 if __name__ == "__main__":
-    gisbok = pd.read_csv('./gisbok_knowledgeArea_result.csv')
-    ebk = pd.read_csv('./EBK.csv')
+    gisbok = pd.read_csv('./gisbok_knowledgeArea_result.csv')#.fillna(method='ffill')
+    ebk = pd.read_csv('./EBK.csv')#.fillna(method='ffill')
 
-    topics_ebk = ebk[["Topic"]]
-    topics_gisbok = gisbok[["topic"]]
+    all_lo = gisbok["learning_objective"].to_list() + ebk["learning_objective"].to_list()
+
+    topics_ebk = ebk["Topic"].fillna("null").to_list()
+    topics_gisbok = gisbok["topic"].fillna("null").to_list()
     # gisbok_json = json.load(gisbok.to_json(orient='records'))
-    gisbok_docs = gisbok.to_csv(index=False).split('\r\n')
-    ebk_docs = topics_ebk.to_csv(index=False).split('\r\n')
     ps = PorterStemmer()
 
-    stems_gisbok = [stem_lines(i, ps) for i in gisbok_docs]
-    stems_ebk = [stem_lines(i, ps) for i in ebk_docs]
+    stems_gisbok = [stem_lines(i, ps) for i in topics_gisbok]
+    stems_ebk = [stem_lines(i, ps) for i in topics_ebk]
+    stems_lo = [stem_lines(i, ps) for i in all_lo.fillna("null")]
 
     tfidf_vectorizer = TfidfVectorizer(stop_words=get_stopwords(),
                                        token_pattern=u'(?ui)\\b\\w*[a-zA-Z]+\\w*\\b'
                                        )
 
-    tfidf_vectorizer.fit(stems_gisbok + stems_ebk)
+    tfidf_vectorizer.fit(all_lo)
+
     embedded_gisbok = tfidf_vectorizer.transform(stems_gisbok)
     embedded_ebk = tfidf_vectorizer.transform(stems_ebk)
 
     similarity_score_matrix = (embedded_gisbok * (embedded_ebk.T)).toarray()
     index_very_similar = np.argwhere(
-        similarity_score_matrix > 0.1)  # similarity_score_matrix is a symetic square matrix
+        similarity_score_matrix > 0.5)  # similarity_score_matrix is a symetic square matrix
     print(len(index_very_similar))
     pairs = set()
     for i in index_very_similar:
