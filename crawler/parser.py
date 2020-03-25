@@ -72,7 +72,7 @@ from functools import wraps
 from pathlib import Path
 
 # Others
-from lxml.etree import _ElementTree as ET
+from lxml.etree import _ElementTree as ET  # noqa
 from lxml.html import parse as html_parse
 from tqdm import tqdm
 
@@ -148,6 +148,24 @@ def cleantd(
     return wrapper
 
 
+def text_only(etrees: List[ET]) -> Tuple[str, ...]:
+    """Text only of `etrees`."""
+    return tuple(map(lambda etree: etree.text_content(), etrees))
+
+
+def text_onlyd(
+    func: Callable[[List[ET]], List[ET]]
+) -> Callable[[List[ET]], Tuple[str, ...]]:
+    """Text only decorator."""
+
+    @wraps(func)
+    def wrapper(etrees: ET) -> Tuple[str, ...]:
+        """Wrapper of func."""
+        return text_only(func(etrees))
+
+    return wrapper
+
+
 def first(element: List[str]) -> str:
     """Clean text."""
     return element and element[0] or ""
@@ -215,11 +233,12 @@ def parse_keywords(etree: ET) -> Tuple[str, ...]:
 
 
 @cleantd
-def parse_learning_objectives(etree: ET) -> Tuple[str, ...]:
+@text_onlyd
+def parse_learning_objectives(etree: ET) -> List[ET]:
     """Parse tuple of learning objectives."""
     return etree.xpath(
         "//div[contains(@class, 'field-name-field-learning-objectives')]"
-        "//li//text()"
+        "//li"
     )
 
 
