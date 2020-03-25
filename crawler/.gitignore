@@ -2,7 +2,7 @@
 .pytype
 __pypackages__
 data
-sample.csv
+../code/gisbok_knowledgeArea_result.csv
 
 # Created by https://www.gitignore.io/api/python,emacs,macos
 # Edit at https://www.gitignore.io/?templates=python,emacs,macos
