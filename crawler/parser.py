@@ -218,8 +218,7 @@ def parse_keywords(etree: ET) -> Tuple[str, ...]:
 def parse_learning_objectives(etree: ET) -> Tuple[str, ...]:
     """Parse tuple of learning objectives."""
     return etree.xpath(
-        "//*[@id='ins-resources']"
-        "/div[contains(@class, 'field-name-field-learning-objectives')]"
+        "//div[contains(@class, 'field-name-field-learning-objectives')]"
         "//li//text()"
     )
 
