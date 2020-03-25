@@ -63,6 +63,8 @@ Definitions (needs extraction from Topic Description)
 
 The purpose of adding them into an owl file:
 """
+from __future__ import annotations
+
 # Standard Library
 from csv import DictReader, DictWriter
 from dataclasses import dataclass
@@ -151,11 +153,11 @@ def first(element: List[str]) -> str:
     return element and element[0] or ""
 
 
-def firstd(func: Callable[[List[str]], str]) -> Callable[[ET], str]:
+def firstd(func: Callable[[ET], List[str]]) -> Callable[[ET], str]:
     """Clean text decorator."""
 
     @wraps(func)
-    def wrapper(etree: ET) -> a:
+    def wrapper(etree: ET) -> str:
         """Wrapper of func."""
         return first(func(etree))
 
@@ -172,7 +174,7 @@ def parse_body(etree: ET) -> str:
 
 @cleand
 @firstd
-def parse_doi(etree: ET) -> str:
+def parse_doi(etree: ET) -> List[str]:
     """Parse DOI."""
     return etree.xpath(
         "//*[@id='info']//a[contains(@href, 'doi.org')]//text()"
@@ -181,14 +183,14 @@ def parse_doi(etree: ET) -> str:
 
 @cleand
 @firstd
-def parse_title(etree: ET) -> str:
+def parse_title(etree: ET) -> List[str]:
     """Parse title."""
     return etree.xpath("//*[@id='page-title']/text()")
 
 
 @cleand
 @firstd
-def parse_abstract(etree: ET) -> str:
+def parse_abstract(etree: ET) -> List[str]:
     """Parse abstract."""
     return etree.xpath(
         "//div[contains(@class, 'field-type-text-with-summary')]//p//text()"
