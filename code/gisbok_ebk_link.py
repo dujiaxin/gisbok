@@ -18,15 +18,30 @@ def get_stopwords():
 
 
 def stem_lines(line, ps=PorterStemmer()):
+    if len(line)<3:
+        print(line)
+        return 'null'
     tokens = word_tokenize(line)
     tokens = [word for word in tokens if len(word) > 1]
     stemmed_tokens = [ps.stem(i) for i in tokens]
     return ' '.join(stemmed_tokens)
 
 
+def bow_topics(groupTopic, tfidf_vectorizer):
+    embeddedTopic = []
+    for name, group in groupTopic:
+        # print(name)
+        # print(group)
+        topics = group['learning_objective'].to_list()
+        stemmed = [stem_lines(i, ps) for i in topics]
+        embedded_gisbok = tfidf_vectorizer.transform([" ".join(stemmed)])
+        embeddedTopic.append({"topic":name, "embedding": embedded_gisbok.toarray()})
+    return pd.DataFrame(embeddedTopic)
+
+
 if __name__ == "__main__":
-    gisbok = pd.read_csv('./gisbok_knowledgeArea_result.csv')#.fillna(method='ffill')
-    ebk = pd.read_csv('./EBK.csv')#.fillna(method='ffill')
+    gisbok = pd.read_csv('gisbok_knowledgeArea_result.csv').fillna('null')#.fillna(method='ffill')
+    ebk = pd.read_csv('./EBK_origin.csv').fillna(method='ffill')
 
     all_lo = gisbok["learning_objective"].to_list() + ebk["learning_objective"].to_list()
 
@@ -37,7 +52,7 @@ if __name__ == "__main__":
 
     stems_gisbok = [stem_lines(i, ps) for i in topics_gisbok]
     stems_ebk = [stem_lines(i, ps) for i in topics_ebk]
-    stems_lo = [stem_lines(i, ps) for i in all_lo.fillna("null")]
+    stems_lo = [stem_lines(i, ps) for i in all_lo]
 
     tfidf_vectorizer = TfidfVectorizer(stop_words=get_stopwords(),
                                        token_pattern=u'(?ui)\\b\\w*[a-zA-Z]+\\w*\\b'
@@ -45,16 +60,21 @@ if __name__ == "__main__":
 
     tfidf_vectorizer.fit(all_lo)
 
-    embedded_gisbok = tfidf_vectorizer.transform(stems_gisbok)
-    embedded_ebk = tfidf_vectorizer.transform(stems_ebk)
+    groupTopic_gisbok = gisbok.groupby("topic")
+    groupTopic_ebk = ebk.groupby("Topic")
 
-    similarity_score_matrix = (embedded_gisbok * (embedded_ebk.T)).toarray()
+    embed_topic_gisbok = bow_topics(groupTopic_gisbok, tfidf_vectorizer)
+    embed_topic_ebk = bow_topics(groupTopic_ebk, tfidf_vectorizer)
+
+    embedded_gisbok = np.squeeze(np.asarray(embed_topic_gisbok["embedding"].to_list()))
+    embedded_ebk = np.squeeze(np.asarray(embed_topic_ebk["embedding"].to_list()))
+    similarity_score_matrix = embedded_gisbok.dot(embedded_ebk.T)
     index_very_similar = np.argwhere(
         similarity_score_matrix > 0.5)  # similarity_score_matrix is a symetic square matrix
     print(len(index_very_similar))
     pairs = set()
     for i in index_very_similar:
-        pairs.add(gisbok_docs[i[0]] + " ; " +ebk_docs[i[1]])
+        pairs.add(embed_topic_gisbok["topic"].iloc[i[0]] + " ; " +embed_topic_ebk["topic"].iloc[i[1]])
     print("\n".join(pairs))
 
 
