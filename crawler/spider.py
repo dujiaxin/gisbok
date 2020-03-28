@@ -72,7 +72,9 @@ def parse_links(text: str) -> Set[Tuple[str, str]]:
         map(
             lambda ele: (
                 ele.text_content().strip(),
-                ele.attrib.get("href", ""),
+                ele.attrib.get("href", "").replace(
+                    "//10.22224", "//doi.org/10.22224"
+                ),
             ),
             fromstring(text).xpath("//td[contains(@class, 'rteright')]/*"),
         )
