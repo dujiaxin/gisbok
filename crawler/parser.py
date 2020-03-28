@@ -72,7 +72,7 @@ from functools import wraps
 from pathlib import Path
 
 # Others
-from lxml.etree import _ElementTree as ET  # noqa
+from lxml.etree import _ElementTree as ET  # noqa pylint: disable=E0611
 from lxml.html import parse as html_parse
 from tqdm import tqdm
 
@@ -87,12 +87,16 @@ HTML_TOPIC_PATH = DATA_PATH / "htmls" / "bok-topics"
 
 @dataclass
 class Author:
+    """Author data module."""
+
     name: str
     # TODO
 
 
 @dataclass
 class Topic:
+    """Topic data module."""
+
     # body: str
     doi: str
     title: str
@@ -102,11 +106,11 @@ class Topic:
     related_topics: Tuple[str, ...]
 
     @classmethod
-    def from_etree(cls, etree: ET) -> Topic:
-        """Initial function from etree."""
+    def from_etree(cls, etree: ET, *, title: str = "") -> Topic:
+        """Initialize function from etree."""
         return cls(
             parse_doi(etree),
-            parse_title(etree),
+            title,
             parse_abstract(etree),
             parse_keywords(etree),
             parse_learning_objectives(etree),
@@ -115,8 +119,8 @@ class Topic:
 
     @classmethod
     def from_path(cls, path: Union[Path, str]) -> Topic:
-        """Initial function from path."""
-        return cls.from_etree(html_parse(str(path)))
+        """Initialize function from path."""
+        return cls.from_etree(html_parse(str(path)), title=Path(path).stem)
 
 
 def clean(text: str) -> str:
@@ -129,7 +133,7 @@ def cleand(func: Callable[[ET], str]) -> Callable[[ET], str]:
 
     @wraps(func)
     def wrapper(etree: ET) -> str:
-        """Wrapper of func."""
+        """Wrap the func."""
         return clean(func(etree))
 
     return wrapper
@@ -142,7 +146,7 @@ def cleantd(
 
     @wraps(func)
     def wrapper(etree: ET) -> Tuple[str, ...]:
-        """Wrapper of func."""
+        """Wrap the func."""
         return tuple(map(clean, func(etree)))
 
     return wrapper
@@ -160,7 +164,7 @@ def text_onlyd(
 
     @wraps(func)
     def wrapper(etrees: ET) -> Tuple[str, ...]:
-        """Wrapper of func."""
+        """Wrap the func."""
         return text_only(func(etrees))
 
     return wrapper
@@ -176,7 +180,7 @@ def firstd(func: Callable[[ET], List[str]]) -> Callable[[ET], str]:
 
     @wraps(func)
     def wrapper(etree: ET) -> str:
-        """Wrapper of func."""
+        """Wrap the func."""
         return first(func(etree))
 
     return wrapper
@@ -197,13 +201,6 @@ def parse_doi(etree: ET) -> List[str]:
     return etree.xpath(
         "//*[@id='info']//a[contains(@href, 'doi.org')]//text()"
     )
-
-
-@cleand
-@firstd
-def parse_title(etree: ET) -> List[str]:
-    """Parse title."""
-    return etree.xpath("//*[@id='page-title']/text()")
 
 
 @cleand
@@ -254,12 +251,13 @@ def parse_topic_description(etree: ET) -> Tuple[str, ...]:
     return etree.xpath("//*[@id='toc']//ol//a//text()")
 
 
-if __name__ == "__main__":
+def main() -> None:
+    """Main function."""
     # Write learning objectives
     with open("sample.csv", "w", encoding="utf-8") as f, open(
         "./gisbok_knowledgeArea_result.csv", encoding="utf-8"
     ) as g:
-        topics = [row for row in DictReader(g)]
+        topics = list(DictReader(g))
         files = tuple(HTML_TOPIC_PATH.glob("*.html"))
         ptopics = [Topic.from_path(path) for path in files]
 
@@ -271,7 +269,24 @@ if __name__ == "__main__":
         for topic in tqdm(topics):
             for ptopic in ptopics:
                 if topic["topic"] in ptopic.title:
-                    for lo in ptopic.learning_objectives:
-                        topic["learning_objective"] = lo
+                    for l_o in ptopic.learning_objectives:
+                        topic["learning_objective"] = l_o
                         writer.writerow(topic)
                     break
+
+    print(
+        "NOTE: Due to there is 'comma(,)' in `learning_objective`, "
+        "we cannot directly split it by comma.  Here is an example "
+        "to read it.",
+    )
+    print(
+        """
+from csv import DictReader
+with open("sample.csv", encoding="utf-8") as f:
+     for line in DictReader(f):  # line is a dict with key of
+        print(line)  # ["topic", "theme", "area", "learning_objective"]""",
+    )
+
+
+if __name__ == "__main__":
+    main()

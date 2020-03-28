@@ -54,11 +54,11 @@ from lxml.html import fromstring
 from tqdm import tqdm
 
 # Types
-from typing import Set
+from typing import Set, Tuple
 
 DATA_PATH = Path("./data")
 URL_BASE = "https://gistbok.ucgis.org"
-PAGES = 30
+PAGES = (90, 100)
 
 
 def fetch(client: Client, url: str) -> str:
@@ -66,12 +66,18 @@ def fetch(client: Client, url: str) -> str:
     return client.get(url).text
 
 
-def parse_links(text: str) -> Set[str]:
+def parse_links(text: str) -> Set[Tuple[str, str]]:
     """Get links from topics' html."""
-    return set(map(lambda href: href, fromstring(text).xpath("//h5/a/@href")))
+    return set(
+        map(
+            lambda ele: (ele.text_content(), ele.attrib.get("href", "")),
+            fromstring(text).xpath("//td[contains(@class, 'rteright')]/*"),
+        )
+    )
 
 
-def fetch_all_topics() -> Set[str]:
+def fetch_all_topics() -> Set[Tuple[str, str]]:
+    """Fetch all topics."""
     with Client() as client:
         with Pool() as pool:
             return reduce(
@@ -81,26 +87,28 @@ def fetch_all_topics() -> Set[str]:
                         fetch(
                             client,
                             f"{URL_BASE}/all-topics?"
-                            f"term_node_tid_depth=All&page={page}",
+                            f"term_node_tid_depth={page}",
                         )
                     ),
-                    range(PAGES),
+                    range(*PAGES),
                 ),
             )
 
 
-def fetch_topic(client: Client, url: str, pbar: tqdm = None) -> None:
+def fetch_topic(
+    client: Client, topic: Tuple[str, str], pbar: tqdm = None
+) -> None:
     """Fetch and save each topic original html."""
-    path = DATA_PATH / "htmls" / Path(url).relative_to("/")
+    path = DATA_PATH / "htmls" / "bok-topics" / Path(topic[0])
     path.parent.mkdir(parents=True, exist_ok=True)
     with path.with_suffix(".html").open("wb") as f:
-        f.write(client.get(f"{URL_BASE}{url}").content)
+        f.write(topic[1] and client.get(topic[1]).content or b"empty")
     if pbar:
         pbar.update()
 
 
 def main() -> None:
-    """Main function."""
+    """Run Crawler."""
     with Client() as client:
         with Pool(3) as pool:
             topics = fetch_all_topics()
