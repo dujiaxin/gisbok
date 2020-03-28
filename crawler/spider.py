@@ -70,7 +70,10 @@ def parse_links(text: str) -> Set[Tuple[str, str]]:
     """Get links from topics' html."""
     return set(
         map(
-            lambda ele: (ele.text_content(), ele.attrib.get("href", "")),
+            lambda ele: (
+                ele.text_content().strip(),
+                ele.attrib.get("href", ""),
+            ),
             fromstring(text).xpath("//td[contains(@class, 'rteright')]/*"),
         )
     )

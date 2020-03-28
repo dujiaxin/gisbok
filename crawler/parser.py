@@ -99,6 +99,8 @@ class Topic:
 
     # body: str
     doi: str
+    shortlink: str
+    canonical: str
     title: str
     abstract: str
     keywords: Tuple[str, ...]
@@ -110,7 +112,9 @@ class Topic:
         """Initialize function from etree."""
         return cls(
             parse_doi(etree),
-            title,
+            parse_shortlink(etree),
+            parse_canonical(etree),
+            title or parse_title(etree),
             parse_abstract(etree),
             parse_keywords(etree),
             parse_learning_objectives(etree),
@@ -201,6 +205,24 @@ def parse_doi(etree: ET) -> List[str]:
     return etree.xpath(
         "//*[@id='info']//a[contains(@href, 'doi.org')]//text()"
     )
+
+
+@firstd
+def parse_shortlink(etree: ET) -> List[str]:
+    """Parse shortlink."""
+    return etree.xpath("//link[contains(@rel, 'shortlink')]/@href")
+
+
+@firstd
+def parse_canonical(etree: ET) -> List[str]:
+    """Parse canonical."""
+    return etree.xpath("//link[contains(@rel, 'canonical')]/@href")
+
+
+@cleand
+def parse_title(etree: ET) -> str:
+    """Parse title."""
+    return first(etree.xpath("//title/text()")).spilt("|")[-1]
 
 
 @cleand
