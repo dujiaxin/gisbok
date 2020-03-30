@@ -1,0 +1,68 @@
+import requests
+from bs4 import BeautifulSoup
+
+url = "https://gistbok.ucgis.org/all-topics"
+url_base = "https://gistbok.ucgis.org"
+r = requests.get(url)
+to_file = "bok-topics.html"
+with open(to_file, 'w') as f:
+        f.write(r.text)
+
+with open(to_file, 'r') as f:
+    html = f.read()
+soup = BeautifulSoup(html, "html.parser")
+
+url_list = []
+all_links = soup.find_all('a')
+for link in all_links:
+    completed_link = url_base + link.get("href")
+    if "/all-topics/" in completed_link:
+        if completed_link not in url_list:
+            url_list.append(completed_link)
+
+new_url_list = []
+final_url_list = []
+
+for individual_url in url_list:
+    rA = requests.get(individual_url)
+    to_fileA = "temp.html"
+    with open(to_fileA, 'w') as fA:
+        fA.write(rA.text)
+
+    with open(to_fileA, 'r') as fA:
+        htmlA = fA.read()
+    soupA = BeautifulSoup(htmlA, "html.parser")
+
+    each_link = soupA.find_all('a')
+    for linkA in each_link:
+        completed_linkA = url_base + linkA.get("href")
+        if "/all-topics/" in completed_linkA:
+            if completed_linkA not in url_list:
+                url_list.append(completed_linkA)
+
+for each_url in url_list:
+    rB = requests.get(each_url)
+    to_fileB = "temp2.html"
+    with open(to_fileB, 'w') as fB:
+        fB.write(rB.text)
+
+    with open(to_fileB, 'r') as fB:
+        htmlB = fB.read()
+    soupB = BeautifulSoup(htmlB, "html.parser")
+
+    every_link = soupB.find_all('a')
+    for linkB in every_link:
+        completed_linkB = url_base + linkB.get("href")
+        if "/bok-topics/" in completed_linkB:
+            if completed_linkB not in final_url_list:
+                final_url_list.append(completed_linkB)
+
+a_file = "after.txt"
+with open(a_file, 'w') as files:
+    for allL in final_url_list:
+        files.write(allL + '\n')
+
+f.close()
+fA.close()
+fB.close()
+files.close()
