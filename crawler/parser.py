@@ -297,6 +297,7 @@ def main() -> None:
                     break
 
     print(
+        "----------------\n"
         "NOTE: Due to there is 'comma(,)' in `learning_objective`, "
         "we cannot directly split it by comma.  Here is an example "
         "to read it.",
