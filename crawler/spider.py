@@ -93,8 +93,8 @@ def build_topics(
             lambda td: td
             and str(td[0].text_content())
             .strip()
-            .replace("/", "|-|")
-            .replace(":", "|--|")
+            .replace("/", "aa-aa")
+            .replace(":", "aa--aa")
             or topics[-1][0]
         )(
             iele[1].xpath(
@@ -106,8 +106,8 @@ def build_topics(
             and (
                 str(td[0].text_content())
                 .strip()
-                .replace("/", "|-|")
-                .replace(":", "|--|"),
+                .replace("/", "aa-aa")
+                .replace(":", "aa--aa"),
                 str(
                     td[0]
                     .attrib.get("href", EMPTY)
