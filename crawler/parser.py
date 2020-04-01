@@ -171,6 +171,7 @@ class Topic:
     related_topics: TS
     references: TS
     additional_resources: Tuple[Tuple[str, str], ...]
+    instructional_assessment_questions: TS
 
     @classmethod
     def from_etree(
@@ -196,6 +197,7 @@ class Topic:
             parse_related_topics(etree),
             parse_references(etree),
             parse_additional_resources(etree),
+            parse_instructional_assessment_questions(etree),
         )
 
     @classmethod
@@ -247,11 +249,6 @@ def parse_abstract(etree: ET) -> str:
     return etree.xpath(
         "//div[contains(@class, 'field-type-text-with-summary')]//p//text()"
     )
-
-
-def parse_attributes(etree: ET) -> str:
-    """Parse attributes."""
-    # TODO
 
 
 @cleand
@@ -307,6 +304,16 @@ def parse_additional_resources(etree: ET) -> Tuple[Tuple[str, str], ...]:
             ),
             etree.xpath("//*[@id='additional-resources']//p"),
         )
+    )
+
+
+@cleantd
+@text_onlyd
+def parse_instructional_assessment_questions(etree: ET) -> TS:
+    """Parse tuple of instructional assessment questions."""
+    return etree.xpath(
+        "//div[contains(@class, 'field-name-field-learning-questions')]"
+        "//div[contains(@class, 'even')]/ol/li"
     )
 
 
