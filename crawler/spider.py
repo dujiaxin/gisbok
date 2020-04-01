@@ -109,9 +109,11 @@ def build_topics(
                 .replace("/", "反斜杠")
                 .replace(":", "冒号"),
                 str(
-                    td[0]
-                    .attrib.get("href", EMPTY)
-                    .replace("//10.22224", "//doi.org/10.22224")
+                    (
+                        lambda href: href
+                        and href[0].replace("//10.22224", "//doi.org/10.22224")
+                        or EMPTY
+                    )(td[0].xpath(".//@href"))
                 ),
             )
             or (EMPTY, EMPTY)
