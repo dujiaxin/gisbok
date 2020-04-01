@@ -182,7 +182,7 @@ def fetch_topic(
 def main() -> None:
     """Run Crawler."""
     with Client() as client:
-        with Pool(3) as pool:
+        with Pool(10) as pool:
             topics = fetch_all_topics()
             pbar = tqdm(total=len(topics))
             pool.map(lambda url: fetch_topic(client, url, pbar), topics)
