@@ -77,7 +77,7 @@ from lxml.html import parse as html_parse  # noqa: WPS347
 from tqdm import tqdm
 
 # Types
-from typing import Callable, List, Sequence, Tuple, TypeVar, Union
+from typing import Callable, Sequence, Tuple, TypeVar, Union
 
 a = TypeVar("a")
 TS = Tuple[str, ...]
@@ -169,6 +169,8 @@ class Topic:
     keywords: TS
     learning_objectives: TS
     related_topics: TS
+    references: TS
+    additional_resources: Tuple[Tuple[str, str], ...]
 
     @classmethod
     def from_etree(
@@ -192,6 +194,8 @@ class Topic:
             parse_keywords(etree),
             parse_learning_objectives(etree),
             parse_related_topics(etree),
+            parse_references(etree),
+            parse_additional_resources(etree),
         )
 
     @classmethod
@@ -291,6 +295,19 @@ def parse_topic_description(etree: ET) -> TS:
 def parse_references(etree: ET) -> TS:
     """Parse tuple of reference."""
     return etree.xpath("//*[@id='bibliography']//p")
+
+
+def parse_additional_resources(etree: ET) -> Tuple[Tuple[str, str], ...]:
+    """Parse tuple of additional resources."""
+    return tuple(
+        map(
+            lambda et: (
+                clean(et.text_content()),
+                first(et.xpath(".//a/@href")),
+            ),
+            etree.xpath("//*[@id='additional-resources']//p"),
+        )
+    )
 
 
 def main() -> None:
