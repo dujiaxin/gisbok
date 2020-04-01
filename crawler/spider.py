@@ -169,7 +169,7 @@ def fetch_topic(
     client: Client, topic: Tuple[str, str], pbar: tqdm = None
 ) -> None:
     """Fetch and save each topic original html."""
-    path = DATA_PATH / "htmls" / "bok-topics" / Path(" || ".join(topic[:-1]))
+    path = DATA_PATH / "htmls" / "bok-topics" / Path(" -a- ".join(topic[:-1]))
     path.parent.mkdir(parents=True, exist_ok=True)
     with path.with_suffix(".html").open("wb") as f:
         f.write(topic[-1] and client.get(topic[-1]).content or b"empty")

@@ -264,7 +264,7 @@ class Topic:
                 area=parts[0],
                 theme=parts[1],
             )
-        )(Path(path).stem.split(" || "))
+        )(Path(path).stem.split(" -a- "))
 
 
 @cleand
