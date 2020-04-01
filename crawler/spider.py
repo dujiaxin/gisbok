@@ -186,5 +186,3 @@ def main() -> None:
             pool.map(lambda url: fetch_topic(client, url, pbar), topics)
 
 
-if __name__ == "__main__":
-    main()
