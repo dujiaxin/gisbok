@@ -77,7 +77,7 @@ from lxml.html import parse as html_parse  # noqa: WPS347
 from tqdm import tqdm
 
 # Types
-from typing import Callable, List, Set, Tuple, TypeVar, Union
+from typing import Callable, List, Sequence, Tuple, TypeVar, Union
 
 a = TypeVar("a")
 TS = Tuple[str, ...]
@@ -119,14 +119,14 @@ def cleantd(func: Callable[[ET], TS]) -> Callable[[ET], TS]:
     return wrapper
 
 
-def text_only(etrees: List[ET]) -> TS:
+def text_only(etrees: Sequence[ET]) -> TS:
     """Text only of `etrees`."""
     return tuple(map(lambda etree: etree.text_content(), etrees))
 
 
 def text_onlyd(
-    func: Callable[[List[ET]], List[ET]]
-) -> Callable[[List[ET]], TS]:
+    func: Callable[[Sequence[ET]], Sequence[ET]]
+) -> Callable[[Sequence[ET]], TS]:
     """Text only decorator."""
 
     @wraps(func)
@@ -137,12 +137,14 @@ def text_onlyd(
     return wrapper
 
 
-def first(element: List[str]) -> str:
+def first(element: Union[Tuple[str, ...], List[str]]) -> str:
     """Clean text."""
     return element and element[0] or EMPTY
 
 
-def firstd(func: Callable[[ET], List[str]]) -> Callable[[ET], str]:
+def firstd(
+    func: Callable[[ET], Union[Tuple[str, ...], List[str]]]
+) -> Callable[[ET], str]:
     """Clean text decorator."""
 
     @wraps(func)
@@ -151,14 +153,6 @@ def firstd(func: Callable[[ET], List[str]]) -> Callable[[ET], str]:
         return first(func(etree))
 
     return wrapper
-
-
-@dataclass
-class Author:
-    """Author data module."""
-
-    name: str
-    # TODO
 
 
 @dataclass
@@ -172,6 +166,7 @@ class Topic:
     topic: str
     area: str
     theme: str
+    author: str
     abstract: str
     keywords: TS
     learning_objectives: TS
@@ -194,6 +189,7 @@ class Topic:
             to_content(topic),
             to_content(area),
             to_content(theme),
+            parse_authors(etree),
             parse_abstract(etree),
             parse_keywords(etree),
             parse_learning_objectives(etree),
@@ -256,9 +252,12 @@ def parse_attributes(etree: ET) -> str:
     # TODO
 
 
-def parse_authors(etree: ET) -> Set[Author]:
+@cleand
+@firstd
+@text_onlyd
+def parse_authors(etree: ET) -> List[ET]:
     """Parse all authors."""
-    # TODO
+    return etree.xpath("//div[@id='info']")
 
 
 @cleantd
