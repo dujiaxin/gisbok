@@ -66,23 +66,91 @@ The purpose of adding them into an owl file:
 from __future__ import annotations
 
 # Standard Library
-from csv import DictReader, DictWriter
+from csv import DictWriter
 from dataclasses import dataclass
 from functools import wraps
 from pathlib import Path
 
 # Others
-from lxml.etree import _ElementTree as ET  # noqa pylint: disable=E0611
-from lxml.html import parse as html_parse
+from lxml.etree import _ElementTree as ET  # noqa: WPS436
+from lxml.html import parse as html_parse  # noqa: WPS347
 from tqdm import tqdm
 
 # Types
 from typing import Callable, List, Set, Tuple, TypeVar, Union
 
 a = TypeVar("a")
+TS = Tuple[str, ...]
 
+EMPTY = ""
 DATA_PATH = Path("./data")
 HTML_TOPIC_PATH = DATA_PATH / "htmls" / "bok-topics"
+
+
+def to_content(path: str) -> str:
+    """Change back to content from path string."""
+    return path.replace("|--|", ":").replace("|-|", "/")
+
+
+def clean(text: str) -> str:
+    """Clean text."""
+    return text.strip().replace("\xa0", " ")
+
+
+def cleand(func: Callable[[ET], str]) -> Callable[[ET], str]:
+    """Clean text decorator."""
+
+    @wraps(func)
+    def wrapper(etree: ET) -> str:
+        """Wrap the clean func."""
+        return clean(func(etree))
+
+    return wrapper
+
+
+def cleantd(func: Callable[[ET], TS]) -> Callable[[ET], TS]:
+    """Clean text decorator."""
+
+    @wraps(func)
+    def wrapper(etree: ET) -> TS:
+        """Wrap the clean tuple func."""
+        return tuple(map(clean, func(etree)))
+
+    return wrapper
+
+
+def text_only(etrees: List[ET]) -> TS:
+    """Text only of `etrees`."""
+    return tuple(map(lambda etree: etree.text_content(), etrees))
+
+
+def text_onlyd(
+    func: Callable[[List[ET]], List[ET]]
+) -> Callable[[List[ET]], TS]:
+    """Text only decorator."""
+
+    @wraps(func)
+    def wrapper(etrees: ET) -> TS:
+        """Wrap the text_only func."""
+        return text_only(func(etrees))
+
+    return wrapper
+
+
+def first(element: List[str]) -> str:
+    """Clean text."""
+    return element and element[0] or EMPTY
+
+
+def firstd(func: Callable[[ET], List[str]]) -> Callable[[ET], str]:
+    """Clean text decorator."""
+
+    @wraps(func)
+    def wrapper(etree: ET) -> str:
+        """Wrap the first func."""
+        return first(func(etree))
+
+    return wrapper
 
 
 @dataclass
@@ -101,20 +169,31 @@ class Topic:
     doi: str
     shortlink: str
     canonical: str
-    title: str
+    topic: str
+    area: str
+    theme: str
     abstract: str
-    keywords: Tuple[str, ...]
-    learning_objectives: Tuple[str, ...]
-    related_topics: Tuple[str, ...]
+    keywords: TS
+    learning_objectives: TS
+    related_topics: TS
 
     @classmethod
-    def from_etree(cls, etree: ET, *, title: str = "") -> Topic:
+    def from_etree(
+        cls,
+        etree: ET,
+        *,
+        topic: str = EMPTY,
+        theme: str = EMPTY,
+        area: str = EMPTY,
+    ) -> Topic:
         """Initialize function from etree."""
         return cls(
             parse_doi(etree),
             parse_shortlink(etree),
             parse_canonical(etree),
-            title or parse_title(etree),
+            to_content(topic),
+            to_content(area),
+            to_content(theme),
             parse_abstract(etree),
             parse_keywords(etree),
             parse_learning_objectives(etree),
@@ -124,76 +203,20 @@ class Topic:
     @classmethod
     def from_path(cls, path: Union[Path, str]) -> Topic:
         """Initialize function from path."""
-        return cls.from_etree(html_parse(str(path)), title=Path(path).stem)
-
-
-def clean(text: str) -> str:
-    """Clean text."""
-    return text.strip().replace("\xa0", " ")
-
-
-def cleand(func: Callable[[ET], str]) -> Callable[[ET], str]:
-    """Clean text decorator."""
-
-    @wraps(func)
-    def wrapper(etree: ET) -> str:
-        """Wrap the func."""
-        return clean(func(etree))
-
-    return wrapper
-
-
-def cleantd(
-    func: Callable[[ET], Tuple[str, ...]]
-) -> Callable[[ET], Tuple[str, ...]]:
-    """Clean text decorator."""
-
-    @wraps(func)
-    def wrapper(etree: ET) -> Tuple[str, ...]:
-        """Wrap the func."""
-        return tuple(map(clean, func(etree)))
-
-    return wrapper
-
-
-def text_only(etrees: List[ET]) -> Tuple[str, ...]:
-    """Text only of `etrees`."""
-    return tuple(map(lambda etree: etree.text_content(), etrees))
-
-
-def text_onlyd(
-    func: Callable[[List[ET]], List[ET]]
-) -> Callable[[List[ET]], Tuple[str, ...]]:
-    """Text only decorator."""
-
-    @wraps(func)
-    def wrapper(etrees: ET) -> Tuple[str, ...]:
-        """Wrap the func."""
-        return text_only(func(etrees))
-
-    return wrapper
-
-
-def first(element: List[str]) -> str:
-    """Clean text."""
-    return element and element[0] or ""
-
-
-def firstd(func: Callable[[ET], List[str]]) -> Callable[[ET], str]:
-    """Clean text decorator."""
-
-    @wraps(func)
-    def wrapper(etree: ET) -> str:
-        """Wrap the func."""
-        return first(func(etree))
-
-    return wrapper
+        return (
+            lambda parts: cls.from_etree(
+                html_parse(str(path)),
+                topic=parts[2],
+                area=parts[0],
+                theme=parts[1],
+            )
+        )(Path(path).stem.split(" || "))
 
 
 @cleand
 def parse_body(etree: ET) -> str:
     """Parse all content."""
-    return "".join(
+    return EMPTY.join(
         etree.xpath("//div[contains(@class, 'node-content')]//text()")
     )
 
@@ -220,12 +243,6 @@ def parse_canonical(etree: ET) -> List[str]:
 
 
 @cleand
-def parse_title(etree: ET) -> str:
-    """Parse title."""
-    return first(etree.xpath("//title/text()")).spilt("|")[-1]
-
-
-@cleand
 @firstd
 def parse_abstract(etree: ET) -> List[str]:
     """Parse abstract."""
@@ -241,12 +258,11 @@ def parse_attributes(etree: ET) -> str:
 
 def parse_authors(etree: ET) -> Set[Author]:
     """Parse all authors."""
-    # etree.xpath("//*[@id='info']//div[contains(@class, 'even')]/p/text()")
     # TODO
 
 
 @cleantd
-def parse_keywords(etree: ET) -> Tuple[str, ...]:
+def parse_keywords(etree: ET) -> TS:
     """Parse tuple of keywords."""
     return etree.xpath("//*[@id='keywords']//li//text()")
 
@@ -262,39 +278,36 @@ def parse_learning_objectives(etree: ET) -> List[ET]:
 
 
 @cleantd
-def parse_related_topics(etree: ET) -> Tuple[str, ...]:
+def parse_related_topics(etree: ET) -> TS:
     """Parse tuple of related topics."""
     return etree.xpath("//*[@id='related-topics']//a//@href")
 
 
 @cleantd
-def parse_topic_description(etree: ET) -> Tuple[str, ...]:
+def parse_topic_description(etree: ET) -> TS:
     """Parse tuple of topic description."""
     return etree.xpath("//*[@id='toc']//ol//a//text()")
 
 
 def main() -> None:
-    """Main function."""
-    # Write learning objectives
-    with open("sample.csv", "w", encoding="utf-8") as f, open(
-        "./gisbok_knowledgeArea_result.csv", encoding="utf-8"
-    ) as g:
-        topics = list(DictReader(g))
-        files = tuple(HTML_TOPIC_PATH.glob("*.html"))
-        ptopics = [Topic.from_path(path) for path in files]
-
+    """Run main function."""
+    # Write topic, theme, area and learning objectives
+    with open("sample.csv", "w", encoding="utf-8") as f:
         writer = DictWriter(
             f, fieldnames=["topic", "theme", "area", "learning_objective"]
         )
         writer.writeheader()
-
-        for topic in tqdm(topics):
-            for ptopic in ptopics:
-                if topic["topic"] in ptopic.title:
-                    for l_o in ptopic.learning_objectives:
-                        topic["learning_objective"] = l_o
-                        writer.writerow(topic)
-                    break
+        for path in tqdm(HTML_TOPIC_PATH.glob("*.html")):
+            topic = Topic.from_path(path)
+            for l_o in topic.learning_objectives:
+                writer.writerow(
+                    {
+                        "topic": topic.topic,
+                        "theme": topic.theme,
+                        "area": topic.area,
+                        "learning_objective": l_o,
+                    }
+                )
 
     print(
         "----------------\n"

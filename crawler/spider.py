@@ -44,21 +44,37 @@ Which to you shall seem probable, of every
 
 # Standard Library
 from functools import reduce
+from itertools import chain, zip_longest
 from multiprocessing.dummy import Pool
 from operator import or_
 from pathlib import Path
 
 # Others
 from httpx import Client
+from lxml.etree import _ElementTree as ET  # noqa: WPS436
 from lxml.html import fromstring
 from tqdm import tqdm
 
 # Types
-from typing import Set, Tuple
+from typing import List, Set, Tuple
 
 DATA_PATH = Path("./data")
 URL_BASE = "https://gistbok.ucgis.org"
 PAGES = (90, 100)
+KAS = (
+    "Foundational Concepts",
+    "Knowledge Economy",
+    "Computing Platforms",
+    "Programming and Development",
+    "Data Capture",
+    "Data Management",
+    "Analytics and Modeling",
+    "Cartography and Visualization",
+    "Domain Applications",
+    "GIS&T and Society",
+)
+
+EMPTY = ""
 
 
 def fetch(client: Client, url: str) -> str:
@@ -66,18 +82,66 @@ def fetch(client: Client, url: str) -> str:
     return client.get(url).text
 
 
-def parse_links(text: str) -> Set[Tuple[str, str]]:
+def build_topics(
+    topics: List[Tuple[str, str, str]], iele: Tuple[int, ET]
+) -> List[Tuple[str, str, str]]:
+    """Build topic."""
+    return (
+        lambda theme, text_href: topics + [(theme, text_href[0], text_href[1])]
+    )(
+        (
+            lambda td: td
+            and str(td[0].text_content())
+            .strip()
+            .replace("/", "|-|")
+            .replace(":", "|--|")
+            or topics[-1][0]
+        )(
+            iele[1].xpath(
+                f"./td[{iele[0]}][not(contains(@class, 'rteright'))]/*"
+            )
+        ),
+        (
+            lambda td: td
+            and (
+                str(td[0].text_content())
+                .strip()
+                .replace("/", "|-|")
+                .replace(":", "|--|"),
+                str(
+                    td[0]
+                    .attrib.get("href", EMPTY)
+                    .replace("//10.22224", "//doi.org/10.22224")
+                ),
+            )
+            or (EMPTY, EMPTY)
+        )(iele[1].xpath(f"./td[{iele[0]}][contains(@class, 'rteright')]/*")),
+    )
+
+
+def parse_links(text: str, ka: str) -> Set[Tuple[str, str, str, str]]:
     """Get links from topics' html."""
     return set(
         map(
-            lambda ele: (
-                ele.text_content().strip(),
-                ele.attrib.get("href", "").replace(
-                    "//10.22224", "//doi.org/10.22224"
-                ),
+            lambda topic: (ka, topic[0] or topic[1], topic[1], topic[2]),
+            filter(
+                lambda topic: topic[1],
+                (
+                    lambda trs: reduce(
+                        build_topics,
+                        chain.from_iterable(
+                            map(
+                                lambda col: zip_longest(
+                                    [], trs, fillvalue=col
+                                ),
+                                range(1, 4),
+                            )
+                        ),
+                        [(EMPTY, EMPTY, EMPTY)],
+                    )
+                )(fromstring(text).xpath("//tr")),
             ),
-            fromstring(text).xpath("//td[contains(@class, 'rteright')]/*"),
-        )
+        ),
     )
 
 
@@ -88,14 +152,15 @@ def fetch_all_topics() -> Set[Tuple[str, str]]:
             return reduce(
                 or_,
                 pool.map(
-                    lambda page: parse_links(
+                    lambda page_ka: parse_links(
                         fetch(
                             client,
                             f"{URL_BASE}/all-topics?"
-                            f"term_node_tid_depth={page}",
-                        )
+                            f"term_node_tid_depth={page_ka[0]}",
+                        ),
+                        page_ka[1],
                     ),
-                    range(*PAGES),
+                    zip(range(*PAGES), KAS),
                 ),
             )
 
@@ -104,10 +169,10 @@ def fetch_topic(
     client: Client, topic: Tuple[str, str], pbar: tqdm = None
 ) -> None:
     """Fetch and save each topic original html."""
-    path = DATA_PATH / "htmls" / "bok-topics" / Path(topic[0])
+    path = DATA_PATH / "htmls" / "bok-topics" / Path(" || ".join(topic[:-1]))
     path.parent.mkdir(parents=True, exist_ok=True)
     with path.with_suffix(".html").open("wb") as f:
-        f.write(topic[1] and client.get(topic[1]).content or b"empty")
+        f.write(topic[-1] and client.get(topic[-1]).content or b"empty")
     if pbar:
         pbar.update()
 
