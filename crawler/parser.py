@@ -137,18 +137,16 @@ def text_onlyd(
     return wrapper
 
 
-def first(element: Union[Tuple[str, ...], List[str]]) -> str:
-    """Clean text."""
+def first(element: Sequence[a]) -> Union[a, str]:
+    """First element."""
     return element and element[0] or EMPTY
 
 
-def firstd(
-    func: Callable[[ET], Union[Tuple[str, ...], List[str]]]
-) -> Callable[[ET], str]:
-    """Clean text decorator."""
+def firstd(func: Callable[[ET], Sequence[a]]) -> Callable[[ET], a]:
+    """First element decorator."""
 
     @wraps(func)
-    def wrapper(etree: ET) -> str:
+    def wrapper(etree: ET) -> Union[a, str]:
         """Wrap the first func."""
         return first(func(etree))
 
@@ -219,7 +217,7 @@ def parse_body(etree: ET) -> str:
 
 @cleand
 @firstd
-def parse_doi(etree: ET) -> List[str]:
+def parse_doi(etree: ET) -> str:
     """Parse DOI."""
     return etree.xpath(
         "//*[@id='info']//a[contains(@href, 'doi.org')]//text()"
@@ -227,20 +225,20 @@ def parse_doi(etree: ET) -> List[str]:
 
 
 @firstd
-def parse_shortlink(etree: ET) -> List[str]:
+def parse_shortlink(etree: ET) -> str:
     """Parse shortlink."""
     return etree.xpath("//link[contains(@rel, 'shortlink')]/@href")
 
 
 @firstd
-def parse_canonical(etree: ET) -> List[str]:
+def parse_canonical(etree: ET) -> str:
     """Parse canonical."""
     return etree.xpath("//link[contains(@rel, 'canonical')]/@href")
 
 
 @cleand
 @firstd
-def parse_abstract(etree: ET) -> List[str]:
+def parse_abstract(etree: ET) -> str:
     """Parse abstract."""
     return etree.xpath(
         "//div[contains(@class, 'field-type-text-with-summary')]//p//text()"
@@ -255,7 +253,7 @@ def parse_attributes(etree: ET) -> str:
 @cleand
 @firstd
 @text_onlyd
-def parse_authors(etree: ET) -> List[ET]:
+def parse_authors(etree: ET) -> str:
     """Parse all authors."""
     return etree.xpath("//div[@id='info']")
 
@@ -268,7 +266,7 @@ def parse_keywords(etree: ET) -> TS:
 
 @cleantd
 @text_onlyd
-def parse_learning_objectives(etree: ET) -> List[ET]:
+def parse_learning_objectives(etree: ET) -> TS:
     """Parse tuple of learning objectives."""
     return etree.xpath(
         "//div[contains(@class, 'field-name-field-learning-objectives')]"
@@ -286,6 +284,13 @@ def parse_related_topics(etree: ET) -> TS:
 def parse_topic_description(etree: ET) -> TS:
     """Parse tuple of topic description."""
     return etree.xpath("//*[@id='toc']//ol//a//text()")
+
+
+@cleantd
+@text_onlyd
+def parse_references(etree: ET) -> TS:
+    """Parse tuple of reference."""
+    return etree.xpath("//*[@id='bibliography']//p")
 
 
 def main() -> None:
