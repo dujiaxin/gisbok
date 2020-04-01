@@ -299,13 +299,23 @@ def main() -> None:
         writer.writeheader()
         for path in tqdm(HTML_TOPIC_PATH.glob("*.html")):
             topic = Topic.from_path(path)
-            for l_o in topic.learning_objectives:
+            if topic.learning_objectives:
+                for l_o in topic.learning_objectives:
+                    writer.writerow(
+                        {
+                            "topic": topic.topic,
+                            "theme": topic.theme,
+                            "area": topic.area,
+                            "learning_objective": l_o,
+                        }
+                    )
+            else:
                 writer.writerow(
                     {
                         "topic": topic.topic,
                         "theme": topic.theme,
                         "area": topic.area,
-                        "learning_objective": l_o,
+                        "learning_objective": "",
                     }
                 )
 
