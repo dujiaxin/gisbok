@@ -70,13 +70,23 @@ if __name__ == "__main__":
     embedded_ebk = np.squeeze(np.asarray(embed_topic_ebk["embedding"].to_list()))
     similarity_score_matrix = embedded_gisbok.dot(embedded_ebk.T)
     index_very_similar = np.argwhere(
-        similarity_score_matrix > 0.5)  # similarity_score_matrix is a symetic square matrix
+        similarity_score_matrix > 0.4)  # similarity_score_matrix is a symetic square matrix
     print(len(index_very_similar))
+    # set(index_very_similar[:, 0])
     pairs = set()
     for i in index_very_similar:
         pairs.add(embed_topic_gisbok["topic"].iloc[i[0]] + " ; " +embed_topic_ebk["topic"].iloc[i[1]])
     print("\n".join(pairs))
 
+    print("topic no match in gisbok:")
+    for i in range(len(embed_topic_gisbok)):
+        if i not in set(index_very_similar[:,0]):
+            print(embed_topic_gisbok["topic"].iloc[i])
+
+    print("topic no match in ebk:")
+    for i in range(len(embed_topic_ebk)):
+        if i not in set(index_very_similar[:,1]):
+            print(embed_topic_ebk["topic"].iloc[i])
 
     # nlp = spacy.load("en_core_web_lg")
     # gisbok_nlp = [nlp(i) for i in gisbok_docs]
