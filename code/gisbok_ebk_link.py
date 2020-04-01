@@ -40,7 +40,7 @@ def bow_topics(groupTopic, tfidf_vectorizer):
 
 
 if __name__ == "__main__":
-    gisbok = pd.read_csv('gisbok_knowledgeArea_result.csv').fillna('null')#.fillna(method='ffill')
+    gisbok = pd.read_csv('gisbok_lo.csv').fillna('null')#.fillna(method='ffill')
     ebk = pd.read_csv('./EBK_origin.csv').fillna(method='ffill')
 
     all_lo = gisbok["learning_objective"].to_list() + ebk["learning_objective"].to_list()
@@ -73,15 +73,15 @@ if __name__ == "__main__":
         similarity_score_matrix > 0.4)  # similarity_score_matrix is a symetic square matrix
     print(len(index_very_similar))
     # set(index_very_similar[:, 0])
-    pairs = set()
-    for i in index_very_similar:
-        pairs.add(embed_topic_gisbok["topic"].iloc[i[0]] + " ; " +embed_topic_ebk["topic"].iloc[i[1]])
-    print("\n".join(pairs))
-
-    print("topic no match in gisbok:")
-    for i in range(len(embed_topic_gisbok)):
-        if i not in set(index_very_similar[:,0]):
-            print(embed_topic_gisbok["topic"].iloc[i])
+    # pairs = set()
+    # for i in index_very_similar:
+    #     pairs.add(embed_topic_gisbok["topic"].iloc[i[0]] + " ; " +embed_topic_ebk["topic"].iloc[i[1]])
+    # print("\n".join(pairs))
+    #
+    # print("topic no match in gisbok:")
+    # for i in range(len(embed_topic_gisbok)):
+    #     if i not in set(index_very_similar[:,0]):
+    #         print(embed_topic_gisbok["topic"].iloc[i])
 
     print("topic no match in ebk:")
     for i in range(len(embed_topic_ebk)):
