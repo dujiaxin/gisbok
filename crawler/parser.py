@@ -91,7 +91,7 @@ HTML_TOPIC_PATH = DATA_PATH / "htmls" / "bok-topics"
 
 def to_content(path: str) -> str:
     """Change back to content from path string."""
-    return path.replace("aa--aa", ":").replace("aa-aa", "/")
+    return path.replace("冒号", ":").replace("反斜杠", "/")
 
 
 def clean(text: str) -> str:
@@ -264,7 +264,7 @@ class Topic:
                 area=parts[0],
                 theme=parts[1],
             )
-        )(Path(path).stem.split(" -a- "))
+        )(Path(path).stem.split(" 分 "))
 
 
 @cleand

@@ -93,8 +93,8 @@ def build_topics(
             lambda td: td
             and str(td[0].text_content())
             .strip()
-            .replace("/", "aa-aa")
-            .replace(":", "aa--aa")
+            .replace("/", "反斜杠")
+            .replace(":", "冒号")
             or topics[-1][0]
         )(
             iele[1].xpath(
@@ -106,8 +106,8 @@ def build_topics(
             and (
                 str(td[0].text_content())
                 .strip()
-                .replace("/", "aa-aa")
-                .replace(":", "aa--aa"),
+                .replace("/", "反斜杠")
+                .replace(":", "冒号"),
                 str(
                     td[0]
                     .attrib.get("href", EMPTY)
@@ -169,7 +169,7 @@ def fetch_topic(
     client: Client, topic: Tuple[str, str], pbar: tqdm = None
 ) -> None:
     """Fetch and save each topic original html."""
-    path = DATA_PATH / "htmls" / "bok-topics" / Path(" -a- ".join(topic[:-1]))
+    path = DATA_PATH / "htmls" / "bok-topics" / Path(" 分 ".join(topic[:-1]))
     path.parent.mkdir(parents=True, exist_ok=True)
     with path.with_suffix(".html").open("wb") as f:
         f.write(topic[-1] and client.get(topic[-1]).content or b"empty")
