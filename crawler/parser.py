@@ -69,7 +69,9 @@ from __future__ import annotations
 from csv import DictWriter
 from dataclasses import dataclass
 from functools import wraps
+from itertools import chain
 from pathlib import Path
+from random import choice
 
 # Others
 from lxml.etree import _ElementTree as ET  # noqa: WPS436
@@ -153,7 +155,7 @@ def firstd(func: Callable[[ET], Sequence[a]]) -> Callable[[ET], a]:
     return wrapper
 
 
-@dataclass
+@dataclass(repr=False)
 class Topic:
     """Topic data module."""
 
@@ -172,6 +174,58 @@ class Topic:
     references: TS
     additional_resources: Tuple[Tuple[str, str], ...]
     instructional_assessment_questions: TS
+
+    def item_str(self, topic_item: str) -> Tuple[str, str]:
+        """Return item str tuple."""
+        return (topic_item, getattr(self, topic_item))
+
+    def item_sq_str(self, topic_item: str) -> Tuple[str, str]:
+        """Return item str tuple."""
+        return (topic_item, "\n".join(getattr(self, topic_item)))
+
+    def __repr__(self) -> str:
+        """Print out the Topic."""
+        return "\n\n====================================\n\n".join(
+            map(
+                lambda topic_item: "\n----------------\n".join(topic_item),
+                chain(
+                    map(
+                        self.item_str,
+                        (
+                            "doi",
+                            "shortlink",
+                            "canonical",
+                            "topic",
+                            "area",
+                            "theme",
+                            "author",
+                            "abstract",
+                        ),
+                    ),
+                    map(
+                        self.item_sq_str,
+                        (
+                            "keywords",
+                            "learning_objectives",
+                            "related_topics",
+                            "references",
+                            "instructional_assessment_questions",
+                        ),
+                    ),
+                    (
+                        (
+                            "additional_resources",
+                            "\n".join(
+                                map(
+                                    lambda ar: "\n".join(ar),
+                                    self.additional_resources,
+                                )
+                            ),
+                        ),
+                    ),
+                ),
+            )
+        )
 
     @classmethod
     def from_etree(
@@ -347,6 +401,9 @@ def main() -> None:
                     }
                 )
 
+    eg_path = choice(tuple(HTML_TOPIC_PATH.glob("*.html")))
+    print(f"example topic:\n{eg_path}\n----------")
+    print(Topic.from_path(eg_path))
     print(
         "----------------\n"
         "NOTE: Due to there is 'comma(,)' in `learning_objective`, "
