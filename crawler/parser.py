@@ -76,6 +76,7 @@ from random import choice
 # Others
 from lxml.etree import _ElementTree as ET  # noqa: WPS436
 from lxml.html import parse as html_parse  # noqa: WPS347
+from lxml.html import tostring
 from tqdm import tqdm
 
 # Types
@@ -159,7 +160,8 @@ def firstd(func: Callable[[ET], Sequence[a]]) -> Callable[[ET], a]:
 class Topic:
     """Topic data module."""
 
-    # body: str
+    body: str
+    body_raw: str
     doi: str
     shortlink: str
     canonical: str
@@ -238,6 +240,8 @@ class Topic:
     ) -> Topic:
         """Initialize function from etree."""
         return cls(
+            parse_body(etree),
+            parse_body_raw(etree),
             parse_doi(etree),
             parse_shortlink(etree),
             parse_canonical(etree),
@@ -272,6 +276,13 @@ def parse_body(etree: ET) -> str:
     """Parse all content."""
     return EMPTY.join(
         etree.xpath("//div[contains(@class, 'node-content')]//text()")
+    )
+
+
+def parse_body_raw(etree: ET) -> str:
+    """Parse the raw body content."""
+    return (lambda raw: raw and tostring(raw) or "")(
+        first(etree.xpath("//div[contains(@class, 'node-content')]"))
     )
 
 
@@ -404,6 +415,14 @@ def main() -> None:
     eg_path = choice(tuple(HTML_TOPIC_PATH.glob("*.html")))
     print(f"example topic:\n{eg_path}\n----------")
     print(Topic.from_path(eg_path))
+    print(
+        """
+from parser import Topic, HTML_TOPIC_PATH
+for path in HTML_TOPIC_PATH.glob("*.html"):
+    topic = Topic.from_path(path)
+    print(topic.body_raw)
+    print(topic)""",
+    )
     print(
         "----------------\n"
         "NOTE: Due to there is 'comma(,)' in `learning_objective`, "
