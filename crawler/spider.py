@@ -1,75 +1,192 @@
-import requests
-from bs4 import BeautifulSoup
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
+r"""
+Life's pathetic, have fun ("▔□▔)/hi~♡ Nasy.
+
+Excited without bugs::
+
+    |             *         *
+    |                  .                .
+    |           .
+    |     *                      ,
+    |                   .
+    |
+    |                               *
+    |          |\___/|
+    |          )    -(             .              ·
+    |         =\ -   /=
+    |           )===(       *
+    |          /   - \
+    |          |-    |
+    |         /   -   \     0.|.0
+    |  NASY___\__( (__/_____(\=/)__+1s____________
+    |  ______|____) )______|______|______|______|_
+    |  ___|______( (____|______|______|______|____
+    |  ______|____\_|______|______|______|______|_
+    |  ___|______|______|______|______|______|____
+    |  ______|______|______|______|______|______|_
+    |  ___|______|______|______|______|______|____
+
+author   : Nasy https://nasy.moe
+date     : Mar 20, 2020
+email    : Nasy <nasyxx+python@gmail.com>
+filename : spider.py
+project  : crawler
+license  : GPL-3.0+
+
+At pick'd leisure
+  Which shall be shortly, single I'll resolve you,
+Which to you shall seem probable, of every
+  These happen'd accidents
+                          -- The Tempest
+"""
+
+# Standard Library
+from functools import reduce
+from itertools import chain, zip_longest
+from multiprocessing.dummy import Pool
+from operator import or_
+from pathlib import Path
+
+# Others
+from httpx import Client
+from lxml.etree import _ElementTree as ET  # noqa: WPS436
+from lxml.html import fromstring
 from tqdm import tqdm
-from os import listdir
-from os.path import isfile, join
-import pandas as pd
 
-def get_all_topics():
-    url_base = "https://gistbok.ucgis.org/all-topics?term_node_tid_depth=All&page="
-    url_list = [url_base + str(i) for i in range(0, 30)]
+# Types
+from typing import List, Set, Tuple
 
-    topic_set = set()
-    for i, url in tqdm(enumerate(url_list)):
-        r = requests.get(url)
-        to_file_path = "./data/topics_page_" + str(i) + ".html"
-        with open(to_file_path, "w") as f:
-            f.write(r.text)
-        # read a html file and extract what you need using BeautifulSoup
-        with open(to_file_path, "r") as f:
-            html = f.read()
-        soup = BeautifulSoup(html, "html.parser")
-        hrefs = soup.find_all('a')
-        for href in hrefs:
-            href_text = href.get('href')
-            if href_text.startswith('/bok-topics'):
-                topic_set.add(href_text.replace("/bok-topics/", ""))
-        return topic_set
+DATA_PATH = Path("./data")
+URL_BASE = "https://gistbok.ucgis.org"
+PAGES = (90, 100)
+KAS = (
+    "Foundational Concepts",
+    "Knowledge Economy",
+    "Computing Platforms",
+    "Programming and Development",
+    "Data Capture",
+    "Data Management",
+    "Analytics and Modeling",
+    "Cartography and Visualization",
+    "Domain Applications",
+    "GIS&T and Society",
+)
+
+EMPTY = ""
 
 
-def save_urls(topic_set):
-    for topic in tqdm(topic_set):
-        r = requests.get("https://gistbok.ucgis.org/bok-topics/" + topic)
-        to_file_path = "./data/gisbok_topic_" + topic + ".html"
-        with open(to_file_path, "w", encoding='utf-8') as f:
-            f.write(r.text)
+def fetch(client: Client, url: str) -> str:
+    """Fetch url and the response text back."""
+    return client.get(url).text
 
 
-def save_related_topics():
-    onlyfiles = [f for f in listdir("./data") if isfile(join("./data", f))]
-    links = {}
-    # read a html file and extract what you need using BeautifulSoup
-    for file in onlyfiles:
-        if file.startswith("gisbok_topic"):
-            with open("./data/" + file, "r", encoding='utf-8') as f:
-                html = f.read()
-            soup = BeautifulSoup(html, "html.parser")
-            learning_objectives = soup.find(class_="field-name-field-learning-objectives").find_all('li')
-            for lo in learning_objectives:
-                print(lo.text)
-            title = soup.find(id='page-title').string
-            related_topics = soup.find(id="related-topics")
-            if related_topics == None:
-                continue
-            rs = []
-            for r in related_topics.find_all('a'):
-                rs.append(r.string)
-            links[title] = rs
-    df = pd.DataFrame.from_dict(links)
-    df.to_csv("./data/links.csv")
+def build_topics(
+    topics: List[Tuple[str, str, str]], iele: Tuple[int, ET]
+) -> List[Tuple[str, str, str]]:
+    """Build topic."""
+    return (
+        lambda theme, text_href: topics + [(theme, text_href[0], text_href[1])]
+    )(
+        (
+            lambda td: td
+            and str(td[0].text_content())
+            .strip()
+            .replace("/", "反斜杠")
+            .replace(":", "冒号")
+            or topics[-1][0]
+        )(
+            iele[1].xpath(
+                f"./td[{iele[0]}][not(contains(@class, 'rteright'))]/*"
+            )
+        ),
+        (
+            lambda td: td
+            and (
+                str(td[0].text_content())
+                .strip()
+                .replace("/", "反斜杠")
+                .replace(":", "冒号"),
+                str(
+                    (
+                        lambda href: href
+                        and href[0].replace("//10.22224", "//doi.org/10.22224")
+                        or EMPTY
+                    )(td[0].xpath(".//@href"))
+                ),
+            )
+            or (EMPTY, EMPTY)
+        )(iele[1].xpath(f"./td[{iele[0]}][contains(@class, 'rteright')]/*")),
+    )
+
+
+def parse_links(text: str, ka: str) -> Set[Tuple[str, str, str, str]]:
+    """Get links from topics' html."""
+    return set(
+        map(
+            lambda topic: (ka, topic[0] or topic[1], topic[1], topic[2]),
+            filter(
+                lambda topic: topic[1],
+                (
+                    lambda trs: reduce(
+                        build_topics,
+                        chain.from_iterable(
+                            map(
+                                lambda col: zip_longest(
+                                    [], trs, fillvalue=col
+                                ),
+                                range(1, 4),
+                            )
+                        ),
+                        [(EMPTY, EMPTY, EMPTY)],
+                    )
+                )(fromstring(text).xpath("//tr")),
+            ),
+        ),
+    )
+
+
+def fetch_all_topics() -> Set[Tuple[str, str]]:
+    """Fetch all topics."""
+    with Client() as client:
+        with Pool() as pool:
+            return reduce(
+                or_,
+                pool.map(
+                    lambda page_ka: parse_links(
+                        fetch(
+                            client,
+                            f"{URL_BASE}/all-topics?"
+                            f"term_node_tid_depth={page_ka[0]}",
+                        ),
+                        page_ka[1],
+                    ),
+                    zip(range(*PAGES), KAS),
+                ),
+            )
+
+
+def fetch_topic(
+    client: Client, topic: Tuple[str, str], pbar: tqdm = None
+) -> None:
+    """Fetch and save each topic original html."""
+    path = DATA_PATH / "htmls" / "bok-topics" / Path(" 分 ".join(topic[:-1]))
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with path.with_suffix(".html").open("wb") as f:
+        f.write(topic[-1] and client.get(topic[-1]).content or b"empty")
+    if pbar:
+        pbar.update()
+
+
+def main() -> None:
+    """Run Crawler."""
+    with Client() as client:
+        with Pool(10) as pool:
+            topics = fetch_all_topics()
+            pbar = tqdm(total=len(topics))
+            pool.map(lambda url: fetch_topic(client, url, pbar), topics)
 
 
 if __name__ == "__main__":
-    # save the web page to a html file
-    # topic_set = get_all_topics()
-    gisbok = pd.read_csv('./gisbok_knowledgeArea_result.csv')
-    topics_gisbok = gisbok["topic"].to_list()
-    for topic in topics_gisbok:
-        with open("./data/gisbok_topic_" + topic.replace(" ","-").lower() + ".html", "r", encoding='utf-8') as f:
-            html = f.read()
-        soup = BeautifulSoup(html, "html.parser")
-        learning_objectives = soup.find(class_="field-name-field-learning-objectives").find_all('li')
-        for lo in learning_objectives:
-            print(lo.text)
-
-
+    main()

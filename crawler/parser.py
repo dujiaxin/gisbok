@@ -63,54 +63,36 @@ Definitions (needs extraction from Topic Description)
 
 The purpose of adding them into an owl file:
 """
+from __future__ import annotations
+
 # Standard Library
-from csv import DictReader, DictWriter
+from csv import DictWriter
 from dataclasses import dataclass
 from functools import wraps
+from itertools import chain
 from pathlib import Path
+from random import choice
 
 # Others
-from dataclasses_json import dataclass_json
-from lxml.etree import _ElementTree as ET
-from lxml.html import parse as html_parse
+from lxml.etree import _ElementTree as ET  # noqa: WPS436
+from lxml.html import parse as html_parse  # noqa: WPS347
+from lxml.html import tostring
 from tqdm import tqdm
 
 # Types
-from typing import Callable, List, Set, Tuple, TypeVar, Union
+from typing import Callable, Sequence, Tuple, TypeVar, Union
 
 a = TypeVar("a")
+TS = Tuple[str, ...]
 
+EMPTY = ""
 DATA_PATH = Path("./data")
 HTML_TOPIC_PATH = DATA_PATH / "htmls" / "bok-topics"
 
 
-@dataclass
-class Author:
-    name: str
-    # TODO
-
-
-@dataclass_json
-@dataclass(init=False)
-class Topic:
-    # body: str
-    doi: str
-    title: str
-    abstract: str
-    keywords: Tuple[str, ...]
-    learning_objectives: Tuple[str, ...]
-    related_topics: Tuple[str, ...]
-
-    def __init__(self, path: Union[Path, str]) -> None:
-        """Initial function."""
-        etree = html_parse(str(path))
-        self.body = parse_body(etree)
-        self.doi = parse_doi(etree)
-        self.title = parse_title(etree)
-        self.abstract = parse_abstract(etree)
-        self.keywords = parse_keywords(etree)
-        self.learning_objectives = parse_learning_objectives(etree)
-        self.related_topics = parse_related_topics(etree)
+def to_content(path: str) -> str:
+    """Change back to content from path string."""
+    return path.replace("冒号", ":").replace("反斜杠", "/")
 
 
 def clean(text: str) -> str:
@@ -123,46 +105,184 @@ def cleand(func: Callable[[ET], str]) -> Callable[[ET], str]:
 
     @wraps(func)
     def wrapper(etree: ET) -> str:
-        """Wrapper of func."""
+        """Wrap the clean func."""
         return clean(func(etree))
 
     return wrapper
 
 
-def cleantd(
-    func: Callable[[ET], Tuple[str, ...]]
-) -> Callable[[ET], Tuple[str, ...]]:
+def cleantd(func: Callable[[ET], TS]) -> Callable[[ET], TS]:
     """Clean text decorator."""
 
     @wraps(func)
-    def wrapper(etree: ET) -> Tuple[str, ...]:
-        """Wrapper of func."""
+    def wrapper(etree: ET) -> TS:
+        """Wrap the clean tuple func."""
         return tuple(map(clean, func(etree)))
 
     return wrapper
 
 
-def first(element: List[str]) -> str:
-    """Clean text."""
-    return element and element[0] or ""
+def text_only(etrees: Sequence[ET]) -> TS:
+    """Text only of `etrees`."""
+    return tuple(map(lambda etree: etree.text_content(), etrees))
 
 
-def firstd(func: Callable[[List[str]], str]) -> Callable[[ET], str]:
-    """Clean text decorator."""
+def text_onlyd(
+    func: Callable[[Sequence[ET]], Sequence[ET]]
+) -> Callable[[Sequence[ET]], TS]:
+    """Text only decorator."""
 
     @wraps(func)
-    def wrapper(etree: ET) -> a:
-        """Wrapper of func."""
+    def wrapper(etrees: ET) -> TS:
+        """Wrap the text_only func."""
+        return text_only(func(etrees))
+
+    return wrapper
+
+
+def first(element: Sequence[a]) -> Union[a, str]:
+    """First element."""
+    return element and element[0] or EMPTY
+
+
+def firstd(func: Callable[[ET], Sequence[a]]) -> Callable[[ET], a]:
+    """First element decorator."""
+
+    @wraps(func)
+    def wrapper(etree: ET) -> Union[a, str]:
+        """Wrap the first func."""
         return first(func(etree))
 
     return wrapper
 
 
+@dataclass(repr=False)
+class Topic:
+    """Topic data module."""
+
+    body: str
+    body_raw: str
+    doi: str
+    shortlink: str
+    canonical: str
+    topic: str
+    area: str
+    theme: str
+    author: str
+    abstract: str
+    keywords: TS
+    learning_objectives: TS
+    related_topics: TS
+    references: TS
+    additional_resources: Tuple[Tuple[str, str], ...]
+    instructional_assessment_questions: TS
+
+    def item_str(self, topic_item: str) -> Tuple[str, str]:
+        """Return item str tuple."""
+        return (topic_item, getattr(self, topic_item))
+
+    def item_sq_str(self, topic_item: str) -> Tuple[str, str]:
+        """Return item str tuple."""
+        return (topic_item, "\n".join(getattr(self, topic_item)))
+
+    def __repr__(self) -> str:
+        """Print out the Topic."""
+        return "\n\n====================================\n\n".join(
+            map(
+                lambda topic_item: "\n----------------\n".join(topic_item),
+                chain(
+                    map(
+                        self.item_str,
+                        (
+                            "doi",
+                            "shortlink",
+                            "canonical",
+                            "topic",
+                            "area",
+                            "theme",
+                            "author",
+                            "abstract",
+                        ),
+                    ),
+                    map(
+                        self.item_sq_str,
+                        (
+                            "keywords",
+                            "learning_objectives",
+                            "related_topics",
+                            "references",
+                            "instructional_assessment_questions",
+                        ),
+                    ),
+                    (
+                        (
+                            "additional_resources",
+                            "\n".join(
+                                map(
+                                    lambda ar: "\n".join(ar),
+                                    self.additional_resources,
+                                )
+                            ),
+                        ),
+                    ),
+                ),
+            )
+        )
+
+    @classmethod
+    def from_etree(
+        cls,
+        etree: ET,
+        *,
+        topic: str = EMPTY,
+        theme: str = EMPTY,
+        area: str = EMPTY,
+    ) -> Topic:
+        """Initialize function from etree."""
+        return cls(
+            parse_body(etree),
+            parse_body_raw(etree),
+            parse_doi(etree),
+            parse_shortlink(etree),
+            parse_canonical(etree),
+            to_content(topic),
+            to_content(area),
+            to_content(theme),
+            parse_authors(etree),
+            parse_abstract(etree),
+            parse_keywords(etree),
+            parse_learning_objectives(etree),
+            parse_related_topics(etree),
+            parse_references(etree),
+            parse_additional_resources(etree),
+            parse_instructional_assessment_questions(etree),
+        )
+
+    @classmethod
+    def from_path(cls, path: Union[Path, str]) -> Topic:
+        """Initialize function from path."""
+        return (
+            lambda parts: cls.from_etree(
+                html_parse(str(path)),
+                topic=parts[2],
+                area=parts[0],
+                theme=parts[1],
+            )
+        )(Path(path).stem.split(" 分 "))
+
+
 @cleand
 def parse_body(etree: ET) -> str:
     """Parse all content."""
-    return "".join(
+    return EMPTY.join(
         etree.xpath("//div[contains(@class, 'node-content')]//text()")
+    )
+
+
+def parse_body_raw(etree: ET) -> str:
+    """Parse the raw body content."""
+    return (lambda raw: raw and tostring(raw) or "")(
+        first(etree.xpath("//div[contains(@class, 'node-content')]"))
     )
 
 
@@ -175,11 +295,16 @@ def parse_doi(etree: ET) -> str:
     )
 
 
-@cleand
 @firstd
-def parse_title(etree: ET) -> str:
-    """Parse title."""
-    return etree.xpath("//*[@id='page-title']/text()")
+def parse_shortlink(etree: ET) -> str:
+    """Parse shortlink."""
+    return etree.xpath("//link[contains(@rel, 'shortlink')]/@href")
+
+
+@firstd
+def parse_canonical(etree: ET) -> str:
+    """Parse canonical."""
+    return etree.xpath("//link[contains(@rel, 'canonical')]/@href")
 
 
 @cleand
@@ -191,59 +316,127 @@ def parse_abstract(etree: ET) -> str:
     )
 
 
-def parse_attributes(etree: ET) -> str:
-    """Parse attributes."""
-    # TODO
-
-
-def parse_authors(etree: ET) -> Set[Author]:
+@cleand
+@firstd
+@text_onlyd
+def parse_authors(etree: ET) -> str:
     """Parse all authors."""
-    # etree.xpath("//*[@id='info']//div[contains(@class, 'even')]/p/text()")
-    # TODO
+    return etree.xpath("//div[@id='info']")
 
 
 @cleantd
-def parse_keywords(etree: ET) -> Tuple[str, ...]:
+def parse_keywords(etree: ET) -> TS:
     """Parse tuple of keywords."""
     return etree.xpath("//*[@id='keywords']//li//text()")
 
 
 @cleantd
-def parse_learning_objectives(etree: ET) -> Tuple[str, ...]:
+@text_onlyd
+def parse_learning_objectives(etree: ET) -> TS:
     """Parse tuple of learning objectives."""
-    return etree.xpath("//*[@id='ins-resources']//li//text()")
+    return etree.xpath(
+        "//div[contains(@class, 'field-name-field-learning-objectives')]"
+        "//li"
+    )
 
 
 @cleantd
-def parse_related_topics(etree: ET) -> Tuple[str, ...]:
+def parse_related_topics(etree: ET) -> TS:
     """Parse tuple of related topics."""
     return etree.xpath("//*[@id='related-topics']//a//@href")
 
 
 @cleantd
-def parse_topic_description(etree: ET) -> Tuple[str, ...]:
+def parse_topic_description(etree: ET) -> TS:
     """Parse tuple of topic description."""
     return etree.xpath("//*[@id='toc']//ol//a//text()")
 
 
-if __name__ == "__main__":
-    # Write learning objectives
-    with open("../code/gisbok_knowledgeArea_result.csv", "w", encoding="utf-8") as f, open(
-            "../code/gisbok_knowledgeArea_result.csv", encoding="utf-8"
-    ) as g:
-        topics = [row for row in DictReader(g)]
-        files = tuple(HTML_TOPIC_PATH.glob("*.html"))
-        ptopics = [Topic(path) for path in files]
+@cleantd
+@text_onlyd
+def parse_references(etree: ET) -> TS:
+    """Parse tuple of reference."""
+    return etree.xpath("//*[@id='bibliography']//p")
 
+
+def parse_additional_resources(etree: ET) -> Tuple[Tuple[str, str], ...]:
+    """Parse tuple of additional resources."""
+    return tuple(
+        map(
+            lambda et: (
+                clean(et.text_content()),
+                first(et.xpath(".//a/@href")),
+            ),
+            etree.xpath("//*[@id='additional-resources']//p"),
+        )
+    )
+
+
+@cleantd
+@text_onlyd
+def parse_instructional_assessment_questions(etree: ET) -> TS:
+    """Parse tuple of instructional assessment questions."""
+    return etree.xpath(
+        "//div[contains(@class, 'field-name-field-learning-questions')]"
+        "//div[contains(@class, 'even')]/ol/li"
+    )
+
+
+def main() -> None:
+    """Run main function."""
+    # Write topic, theme, area and learning objectives
+    with open("sample.csv", "w", encoding="utf-8") as f:
         writer = DictWriter(
             f, fieldnames=["topic", "theme", "area", "learning_objective"]
         )
         writer.writeheader()
+        for path in tqdm(HTML_TOPIC_PATH.glob("*.html")):
+            topic = Topic.from_path(path)
+            if topic.learning_objectives:
+                for l_o in topic.learning_objectives:
+                    writer.writerow(
+                        {
+                            "topic": topic.topic,
+                            "theme": topic.theme,
+                            "area": topic.area,
+                            "learning_objective": l_o,
+                        }
+                    )
+            else:
+                writer.writerow(
+                    {
+                        "topic": topic.topic,
+                        "theme": topic.theme,
+                        "area": topic.area,
+                        "learning_objective": "",
+                    }
+                )
 
-        for topic in tqdm(topics):
-            for ptopic in ptopics:
-                if topic["topic"] in ptopic.title:
-                    for lo in ptopic.learning_objectives:
-                        topic["learning_objective"] = lo
-                        writer.writerow(topic)
-                    break
+    eg_path = choice(tuple(HTML_TOPIC_PATH.glob("*.html")))
+    print(f"example topic:\n{eg_path}\n----------")
+    print(Topic.from_path(eg_path))
+    print(
+        """
+from parser import Topic, HTML_TOPIC_PATH
+for path in HTML_TOPIC_PATH.glob("*.html"):
+    topic = Topic.from_path(path)
+    print(topic.body_raw)
+    print(topic)""",
+    )
+    print(
+        "----------------\n"
+        "NOTE: Due to there is 'comma(,)' in `learning_objective`, "
+        "we cannot directly split it by comma.  Here is an example "
+        "to read it.",
+    )
+    print(
+        """
+from csv import DictReader
+with open("sample.csv", encoding="utf-8") as f:
+     for line in DictReader(f):  # line is a dict with key of
+        print(line)  # ["topic", "theme", "area", "learning_objective"]""",
+    )
+
+
+if __name__ == "__main__":
+    main()
