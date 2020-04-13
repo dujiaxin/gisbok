@@ -39,13 +39,17 @@ class MicrosoftAcademicGraph():
         return self.sqlContext.read.format('com.databricks.spark.csv').options(header='false', delimiter='\t').schema(
             self.getSchema(streamName)).load(self.getFullpath(streamName))
 
-    def save(self, df, path, coalesce=False):
-        _path = self.getFullpath(path)
+    def save(self, df, streamName, coalesce=True):
+        _path = self.getFullpath(streamName)
         print('saving to ' + _path)
         if coalesce:
-            df.coalesce(1).write.mode('overwrite').format('csv').option('header', 'true').save(_path)
+            df.coalesce(1).write.mode('overwrite').format('com.databricks.spark.csv')\
+                .options(header='false', delimiter='\t') \
+                .save(_path)
         else:
-            df.write.mode('overwrite').format('csv').option('header', 'true').save(_path)
+            df.write.mode('overwrite').format('com.databricks.spark.csv')\
+                .options(header='false', delimiter='\t')\
+                .save(_path)
 
     # define stream dictionary
     streams = {
@@ -112,6 +116,13 @@ class MicrosoftAcademicGraph():
                                       'LastPage:string', 'ReferenceCount:long', 'CitationCount:long',
                                       'EstimatedCitation:long', 'OriginalVenue:string', 'FamilyId:long?',
                                       'CreatedDate:DateTime']),
+        'GisPapers': ('gis/GisPapers.txt', ['PaperId:long', 'Rank:uint', 'Doi:string', 'DocType:string', 'PaperTitle:string',
+                                      'OriginalTitle:string', 'BookTitle:string', 'Year:int?', 'Date:DateTime?',
+                                      'Publisher:string', 'JournalId:long?', 'ConferenceSeriesId:long?',
+                                      'ConferenceInstanceId:long?', 'Volume:string', 'Issue:string', 'FirstPage:string',
+                                      'LastPage:string', 'ReferenceCount:long', 'CitationCount:long',
+                                      'EstimatedCitation:long', 'OriginalVenue:string', 'FamilyId:long?',
+                                      'CreatedDate:DateTime']),
         'RelatedFieldOfStudy': ('advanced/RelatedFieldOfStudy.txt',
                                 ['FieldOfStudyId1:long', 'Type1:string', 'FieldOfStudyId2:long', 'Type2:string',
                                  'Rank:float']),
@@ -135,12 +146,15 @@ if __name__ == '__main__':
 
     Papers = MAG.getDataframe('Papers')
     p = Papers.where(Papers.EstimatedCitation > 0) \
-        .join(pf, Papers.PaperId == pf.PaperId, 'inner')        \
+        .join(pf, Papers.PaperId == pf.PaperId, 'left_semi')        \
         .alias('p')
     print("total paper:")
     print(Papers.count())
     print("GIS paper with non-zero citation:")
     print(p.count())
+    MAG.save(p, 'GisPapers')
+    GisPapers = MAG.getDataframe('GisPapers')
+    print(GisPapers.count())
 
     # # Get affiliations
     # Affiliations = MAG.getDataframe('Affiliations')
