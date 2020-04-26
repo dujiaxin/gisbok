@@ -1,9 +1,21 @@
 from pyspark.sql.types import *
 from pyspark import SparkContext
 from pyspark.sql import SQLContext
+from pyspark.sql import Row
 from pyspark.sql import functions as F
 from pyspark.sql.window import Window
 import datetime, time
+import json
+
+
+def invertedIndex2string(jsonstring):
+    jsonObjects = json.loads(jsonstring[2], strict=False)
+    string_list = ["[PAD]"] * jsonObjects["IndexLength"]
+    for k,v in jsonObjects['InvertedIndex'].items():
+        for vv in v:
+            string_list[vv] = k
+    jsonstring[2] = " ".join(string_list)
+    return tuple(jsonstring[0],jsonstring[1],jsonstring[2])
 
 class MicrosoftAcademicGraph():
     datatypedict = {
@@ -48,7 +60,9 @@ class MicrosoftAcademicGraph():
                 .save(_path)
         else:
             df.write.mode('overwrite').format('com.databricks.spark.csv')\
-                .options(header='false', delimiter='\t')\
+                .options(header='true', delimiter='\t') \
+                .option("escape", "") \
+                .option("quoteMode", "NONE") \
                 .save(_path)
 
     # define stream dictionary
@@ -91,6 +105,8 @@ class MicrosoftAcademicGraph():
                       'CreatedDate:DateTime']),
         'PaperAbstractsInvertedIndex': (
         'nlp/PaperAbstractsInvertedIndex.txt.{*}', ['PaperId:long', 'IndexedAbstract:string']),
+        'GisPaperAbstractsInvertedIndex': (
+            'gis/GisPaperAbstractsInvertedIndex.txt', ['PaperId:long', 'IndexedAbstract:string']),
         'PaperAuthorAffiliations': ('mag/PaperAuthorAffiliations.txt',
                                     ['PaperId:long', 'AuthorId:long', 'AffiliationId:long?',
                                      'AuthorSequenceNumber:uint', 'OriginalAuthor:string',
@@ -123,6 +139,16 @@ class MicrosoftAcademicGraph():
                                       'LastPage:string', 'ReferenceCount:long', 'CitationCount:long',
                                       'EstimatedCitation:long', 'OriginalVenue:string', 'FamilyId:long?',
                                       'CreatedDate:DateTime']),
+        'GisPapersEn': (
+        'gis/GisPapersEn.txt', ['PaperId:long', 'Rank:uint', 'Doi:string', 'DocType:string', 'PaperTitle:string',
+                              'OriginalTitle:string', 'BookTitle:string', 'Year:int?', 'Date:DateTime?',
+                              'Publisher:string', 'JournalId:long?', 'ConferenceSeriesId:long?',
+                              'ConferenceInstanceId:long?', 'Volume:string', 'Issue:string', 'FirstPage:string',
+                              'LastPage:string', 'ReferenceCount:long', 'CitationCount:long',
+                              'EstimatedCitation:long', 'OriginalVenue:string', 'FamilyId:long?',
+                              'CreatedDate:DateTime']),
+        'GisTitleAbstracts': (
+            'gis/GisTitleAbstracts.txt', ['PaperId:long', 'PaperTitle:string','IndexedAbstract:string']),
         'RelatedFieldOfStudy': ('advanced/RelatedFieldOfStudy.txt',
                                 ['FieldOfStudyId1:long', 'Type1:string', 'FieldOfStudyId2:long', 'Type2:string',
                                  'Rank:float']),
@@ -153,9 +179,14 @@ if __name__ == '__main__':
     #     # .select(F.when(p.FamilyId.isNull(), p.PaperId).otherwise(p.FamilyId).alias('PaperId'), \
     #     #         p.EstimatedCitation)
     # MAG.save(GisPapers, 'GisPapers')
-    GisPapers = MAG.getDataframe('GisPapers')
+    GisPapers = MAG.getDataframe('GisPapersEn')
     # print("GisPapers.count()")
     # print(GisPapers.count())
+    # PaperUrls = MAG.getDataframe('PaperUrls')
+    # gp = GisPapers.join(PaperUrls.where(PaperUrls.LanguageCode=='en'), GisPapers.PaperId == PaperUrls.PaperId, 'left_semi')
+    # print(gp.count())
+    # gp.show(3)
+    # MAG.save(gp, 'GisPapersEn')
     # print("Date:")
     # print(GisPapers.select(F.min("Date"), F.max("Date")).first())
     # print("Year:")
@@ -168,62 +199,74 @@ if __name__ == '__main__':
     # newGisPapers = GisPapers.where(GisPapers.Date>df.select(F.to_date(df.t).alias('date')).first())
     # print('newGisPapers.count()')
     # print(newGisPapers.count())
-    # Get affiliations
-    Affiliations = MAG.getDataframe('Affiliations')
-    Affiliations = Affiliations.select(Affiliations.AffiliationId, Affiliations.DisplayName)
-    # Affiliations.show(3)
-    # Get authors
-    Authors = MAG.getDataframe('Authors')
-    Authors = Authors.select(Authors.AuthorId, Authors.DisplayName, Authors.LastKnownAffiliationId, Authors.PaperCount)
-    # Authors.show(3)
-    # Get (author, paper) pairs
-    PaperAuthorAffiliations = MAG.getDataframe('PaperAuthorAffiliations')
-    AuthorPaper = PaperAuthorAffiliations.select(PaperAuthorAffiliations.AuthorId,
-                                                 PaperAuthorAffiliations.PaperId).distinct()
-    # AuthorPaper.show(3)
-    # # Get (Paper, EstimatedCitation).
-    # # Treat papers with same FamilyId as a single paper and sum the EstimatedCitation
-    # Papers = MAG.getDataframe('Papers')
-    p = GisPapers.where(GisPapers.EstimatedCitation > 0) \
-        .select(F.when(GisPapers.FamilyId.isNull(), GisPapers.PaperId).otherwise(GisPapers.FamilyId).alias('PaperId'), \
-                GisPapers.EstimatedCitation) \
-        .alias('p')
+    PaperAbstractsInvertedIndex = MAG.getDataframe('PaperAbstractsInvertedIndex')
+    GisPaperAbstractsInvertedIndex = GisPapers.join(PaperAbstractsInvertedIndex, GisPapers.PaperId == PaperAbstractsInvertedIndex.PaperId, 'inner')\
+                                                .select(GisPapers.PaperId, GisPapers.PaperTitle, PaperAbstractsInvertedIndex.IndexedAbstract)\
+                                                .distinct()
+    # print("GisPaperAbstractsInvertedIndex.count():")
+    # print(GisPaperAbstractsInvertedIndex.count())
+    # GisPaperAbstractsInvertedIndex = MAG.getDataframe('GisPaperAbstractsInvertedIndex')
+    # GisTitleAbstracts = MAG.getDataframe('GisTitleAbstracts')
 
-    PaperCitation = p \
-        .groupBy(p.PaperId) \
-        .agg(F.sum(p.EstimatedCitation).alias('EstimatedCitation'))
+    MAG.save(GisPaperAbstractsInvertedIndex,'GisTitleAbstracts')
+    # GisTA = GisPaperAbstractsInvertedIndex.foreach(invertedIndex2string)
+    # GisTA.show(3)
+    # # Get affiliations
+    # Affiliations = MAG.getDataframe('Affiliations')
+    # Affiliations = Affiliations.select(Affiliations.AffiliationId, Affiliations.DisplayName)
+    # # Affiliations.show(3)
+    # # Get authors
+    # Authors = MAG.getDataframe('Authors')
+    # Authors = Authors.select(Authors.AuthorId, Authors.DisplayName, Authors.LastKnownAffiliationId, Authors.PaperCount)
+    # # Authors.show(3)
+    # # Get (author, paper) pairs
+    # PaperAuthorAffiliations = MAG.getDataframe('PaperAuthorAffiliations')
+    # AuthorPaper = PaperAuthorAffiliations.select(PaperAuthorAffiliations.AuthorId,
+    #                                              PaperAuthorAffiliations.PaperId).distinct()
+    # # AuthorPaper.show(3)
+    # # # Get (Paper, EstimatedCitation).
+    # # # Treat papers with same FamilyId as a single paper and sum the EstimatedCitation
+    # # Papers = MAG.getDataframe('Papers')
+    # p = GisPapers.where(GisPapers.EstimatedCitation > 0) \
+    #     .select(F.when(GisPapers.FamilyId.isNull(), GisPapers.PaperId).otherwise(GisPapers.FamilyId).alias('PaperId'), \
+    #             GisPapers.EstimatedCitation) \
+    #     .alias('p')
     #
-    # Generate author, paper, citation table
-    AuthorPaperCitation = AuthorPaper \
-        .join(PaperCitation, AuthorPaper.PaperId == PaperCitation.PaperId, 'inner') \
-        .select(AuthorPaper.AuthorId, AuthorPaper.PaperId, PaperCitation.EstimatedCitation)
+    # PaperCitation = p \
+    #     .groupBy(p.PaperId) \
+    #     .agg(F.sum(p.EstimatedCitation).alias('EstimatedCitation'))
+    # #
+    # # Generate author, paper, citation table
+    # AuthorPaperCitation = AuthorPaper \
+    #     .join(PaperCitation, AuthorPaper.PaperId == PaperCitation.PaperId, 'inner') \
+    #     .select(AuthorPaper.AuthorId, AuthorPaper.PaperId, PaperCitation.EstimatedCitation)
+    # #
+    # # Order author, paper by citation
+    # AuthorPaperOrderByCitation = AuthorPaperCitation \
+    #     .withColumn('Rank', F.row_number().over(Window.partitionBy('AuthorId').orderBy(F.desc('EstimatedCitation'))))
+    # #
+    # # Generate author hindex
+    # ap = AuthorPaperOrderByCitation.alias('ap')
+    # AuthorHIndexTemp = ap \
+    #     .groupBy(ap.AuthorId) \
+    #     .agg(F.sum(ap.EstimatedCitation).alias('TotalEstimatedCitation'), \
+    #          F.max(F.when(ap.EstimatedCitation >= ap.Rank, ap.Rank).otherwise(0)).alias('HIndex'))
     #
-    # Order author, paper by citation
-    AuthorPaperOrderByCitation = AuthorPaperCitation \
-        .withColumn('Rank', F.row_number().over(Window.partitionBy('AuthorId').orderBy(F.desc('EstimatedCitation'))))
+    # # Get author detail information
+    # i = AuthorHIndexTemp.alias('i')
+    # a = Authors.alias('a')
+    # af = Affiliations.alias('af')
     #
-    # Generate author hindex
-    ap = AuthorPaperOrderByCitation.alias('ap')
-    AuthorHIndexTemp = ap \
-        .groupBy(ap.AuthorId) \
-        .agg(F.sum(ap.EstimatedCitation).alias('TotalEstimatedCitation'), \
-             F.max(F.when(ap.EstimatedCitation >= ap.Rank, ap.Rank).otherwise(0)).alias('HIndex'))
-
-    # Get author detail information
-    i = AuthorHIndexTemp.alias('i')
-    a = Authors.alias('a')
-    af = Affiliations.alias('af')
-
-    AuthorHIndex = i \
-        .join(a, a.AuthorId == i.AuthorId, 'inner') \
-        .join(af, a.LastKnownAffiliationId == af.AffiliationId, 'outer') \
-        .select(i.AuthorId, a.DisplayName, af.DisplayName.alias('AffiliationDisplayName'), a.PaperCount,
-                i.TotalEstimatedCitation, i.HIndex)
-
-    TopAuthorHIndex = AuthorHIndex \
-        .select(AuthorHIndex.DisplayName, AuthorHIndex.AffiliationDisplayName, AuthorHIndex.PaperCount,
-                AuthorHIndex.TotalEstimatedCitation, AuthorHIndex.HIndex) \
-        .orderBy(F.desc('HIndex')) \
-        .limit(100)
-    print("TopAuthorHIndex.show(50):")
-    TopAuthorHIndex.show(50)
+    # AuthorHIndex = i \
+    #     .join(a, a.AuthorId == i.AuthorId, 'inner') \
+    #     .join(af, a.LastKnownAffiliationId == af.AffiliationId, 'outer') \
+    #     .select(i.AuthorId, a.DisplayName, af.DisplayName.alias('AffiliationDisplayName'), a.PaperCount,
+    #             i.TotalEstimatedCitation, i.HIndex)
+    #
+    # TopAuthorHIndex = AuthorHIndex \
+    #     .select(AuthorHIndex.DisplayName, AuthorHIndex.AffiliationDisplayName, AuthorHIndex.PaperCount,
+    #             AuthorHIndex.TotalEstimatedCitation, AuthorHIndex.HIndex) \
+    #     .orderBy(F.desc('HIndex')) \
+    #     .limit(100)
+    # print("TopAuthorHIndex.show(50):")
+    # TopAuthorHIndex.show(50)
