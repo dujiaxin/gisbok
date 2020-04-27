@@ -1,0 +1,69 @@
+import requests
+from bs4 import BeautifulSoup
+import csv
+
+csv_file = open('scrapeGIS.csv', 'w')
+csv_writer = csv.writer(csv_file)
+csv_writer.writerow(['Title', 'Learning Objectives', 'Summary', 'Learning Questions', 'Related Topics', 'Keywords', 'Link to Topic', 'Pictures'])
+
+with open('after_working.txt', 'r') as oF:
+    urls = oF.read().splitlines()
+
+for url in urls:
+    html_text = requests.get(url).text
+    soup = BeautifulSoup(html_text, "html.parser")
+
+    summary = "None"
+    learning_objectives = "None"
+    learning_questions = "None"
+    related_topics = "None"
+    keywords = "None"
+    pictures = []
+    images = []
+
+    try:
+        title = soup.find('h2', id='page-title').get_text()
+    except:
+        pass
+
+    try:
+        summary = soup.find('div', class_='field field-name-body field-type-text-with-summary field-label-hidden').get_text()
+    except:
+        pass
+
+    try:
+        learning_objectives = soup.find('div', class_='field field-name-field-learning-objectives field-type-text-long '
+                                                        'field-label-above').get_text()
+    except:
+        pass
+
+    try:
+        learning_questions = soup.find('div', class_='field field-name-field-learning-questions field-type-text-long '
+                                                        'field-label-above').get_text().encode('utf8')
+    except:
+        pass
+
+
+    try:
+        related_topics = soup.find('div', id='related-topics').get_text()
+    except:
+        pass
+
+    try:
+        keywords = soup.find('div', id='keywords').get_text()
+    except:
+        pass
+
+    try:
+        pictures = soup.findAll('img')
+    except:
+        pass
+
+    for picture in pictures:
+        images.append(picture.get('src'))
+    print(images)
+    csv_writer.writerow([title, learning_objectives, summary, learning_questions,related_topics, keywords, url, images])
+    print(url)
+    
+
+csv_file.close()
