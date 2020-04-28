@@ -182,8 +182,10 @@ if __name__ == '__main__':
     GisPapers = MAG.getDataframe('GisPapersEn')
     # print("GisPapers.count()")
     # print(GisPapers.count())
-    # PaperUrls = MAG.getDataframe('PaperUrls')
-    # gp = GisPapers.join(PaperUrls.where(PaperUrls.LanguageCode=='en'), GisPapers.PaperId == PaperUrls.PaperId, 'left_semi')
+    PaperUrls = MAG.getDataframe('PaperUrls')
+    GisPapers.join(PaperUrls.where(PaperUrls.LanguageCode=='en'), GisPapers.PaperId == PaperUrls.PaperId, 'inner')\
+        .select(PaperUrls.SourceUrl).write.format('csv').option("header", "true")\
+        .save("file:///xye_data_nobackup/mag/gisUrl.csv")
     # print(gp.count())
     # gp.show(3)
     # MAG.save(gp, 'GisPapersEn')
@@ -199,16 +201,16 @@ if __name__ == '__main__':
     # newGisPapers = GisPapers.where(GisPapers.Date>df.select(F.to_date(df.t).alias('date')).first())
     # print('newGisPapers.count()')
     # print(newGisPapers.count())
-    PaperAbstractsInvertedIndex = MAG.getDataframe('PaperAbstractsInvertedIndex')
-    GisPaperAbstractsInvertedIndex = GisPapers.join(PaperAbstractsInvertedIndex, GisPapers.PaperId == PaperAbstractsInvertedIndex.PaperId, 'inner')\
-                                                .select(GisPapers.PaperId, GisPapers.PaperTitle, PaperAbstractsInvertedIndex.IndexedAbstract)\
-                                                .distinct()
+    # PaperAbstractsInvertedIndex = MAG.getDataframe('PaperAbstractsInvertedIndex')
+    # GisPaperAbstractsInvertedIndex = GisPapers.join(PaperAbstractsInvertedIndex, GisPapers.PaperId == PaperAbstractsInvertedIndex.PaperId, 'inner')\
+    #                                             .select(GisPapers.PaperId, GisPapers.PaperTitle, PaperAbstractsInvertedIndex.IndexedAbstract)\
+    #                                             .distinct()
     # print("GisPaperAbstractsInvertedIndex.count():")
     # print(GisPaperAbstractsInvertedIndex.count())
     # GisPaperAbstractsInvertedIndex = MAG.getDataframe('GisPaperAbstractsInvertedIndex')
     # GisTitleAbstracts = MAG.getDataframe('GisTitleAbstracts')
 
-    MAG.save(GisPaperAbstractsInvertedIndex,'GisTitleAbstracts')
+    # MAG.save(GisPaperAbstractsInvertedIndex,'GisTitleAbstracts')
     # GisTA = GisPaperAbstractsInvertedIndex.foreach(invertedIndex2string)
     # GisTA.show(3)
     # # Get affiliations

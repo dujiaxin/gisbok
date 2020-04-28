@@ -88,7 +88,10 @@ if __name__ == "__main__":
                 print(ebk["PaperTitle"].iloc[0-ii])
                 paper_list_40.append(ebk["PaperId"].iloc[0-ii])
             elif(similarity_score_matrix[i][index_sort[0][0-ii]]) > 0:
-                print(ebk["PaperTitle"].iloc[0-ii])
+                try:
+                    print(ebk["PaperTitle"].iloc[0-ii].encode('utf-8').strip())
+                except:
+                    pass
                 paper_list_0.append(ebk["PaperId"].iloc[0-ii])
         topic_paper_list.append(
             {"topic":embed_topic_gisbok["topic"].iloc[i],"PaperIdList40":paper_list_40,"PaperIdList0":paper_list_0}
