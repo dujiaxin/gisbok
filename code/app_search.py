@@ -9,6 +9,7 @@ import scipy
 import argparse
 
 
+
 def get_stopwords():
     stopwords_file = './stopwords.txt'
     default_stopwords = set(nltk.corpus.stopwords.words('english'))
@@ -73,44 +74,32 @@ if __name__ == "__main__":
     # embedded_ebk = scipy.sparse.vstack(ebk["embedding"].to_list())
     # similarity_score_matrix = embedded_gisbok.dot(embedded_ebk.T)
 
-    similarity_score_matrix = np.load('similar.npy')
-    index_sort = similarity_score_matrix.argsort(axis=-1)
     ebk=pd.read_pickle('embedding.pickle')
-    topic_paper_list = []
-    for i in range(similarity_score_matrix.shape[0]):
-        print("topic:")
-        print(embed_topic_gisbok["topic"].iloc[i])
-        print("title:")
-        paper_list_40 = []
-        paper_list_0 = []
-        for ii in range(similarity_score_matrix.shape[1]):
-            if similarity_score_matrix[i][index_sort[i][-1 - ii]] > 0.4:
-                print(ebk["PaperTitle"].iloc[index_sort[i][-1 - ii]])
-                paper_list_40.append(ebk["PaperId"].iloc[index_sort[i][-1 - ii]])
-            elif similarity_score_matrix[i][index_sort[i][-1 - ii]] > 0:
-                try:
+    embedded_ebk = scipy.sparse.vstack(ebk["embedding"].to_list())
+    with open('gis_q.csv', 'r') as read_obj:
+        list_of_rows = read_obj.read().splitlines()
+        stems_q = [stem_lines(i, ps) for i in list_of_rows]
+        embedding_q = tfidf_vectorizer.transform(stems_q)
+        similarity_score_matrix = embedding_q.dot(embedded_ebk.T).toarray()
+        index_sort = similarity_score_matrix.argsort(axis=-1)
+        for i in range(similarity_score_matrix.shape[0]):
+            print("search q:")
+            print(list_of_rows[i])
+            print("title:")
+            paper_list_40 = []
+            paper_list_0 = []
+            for ii in range(similarity_score_matrix.shape[1]):
+                if similarity_score_matrix[i][index_sort[i][-1 - ii]] > 0.4:
+                    print(ebk["PaperTitle"].iloc[index_sort[i][-1 - ii]])
+                    paper_list_40.append(ebk["PaperId"].iloc[index_sort[i][-1 - ii]])
+                elif similarity_score_matrix[i][index_sort[i][-1 - ii]] > 0:
+                    if ii > 5:
+                        break
+                    try:
+                        print(ebk["PaperTitle"].iloc[index_sort[i][-1 - ii]].encode('utf-8').strip())
+                    except:
+                        pass
                     paper_list_0.append(ebk["PaperId"].iloc[index_sort[i][-1 - ii]])
-                except:
-                    pass
-
-        topic_paper_list.append(
-            {"topic":embed_topic_gisbok["topic"].iloc[i],"PaperIdList40":paper_list_40,"PaperIdList0":paper_list_0}
-        )
-    pd.DataFrame(topic_paper_list).to_pickle("topic_papers.pickle")
 
 
-
-    index_very_similar = np.argwhere(
-        similarity_score_matrix > 0.4)  # similarity_score_matrix is a symetic square matrix
-    print(len(index_very_similar))
-    set(index_very_similar[:, 0])
-    pairs = []
-    for i in index_very_similar:
-        pairs.append(embed_topic_gisbok["topic"].iloc[i[0]] + "," +str(ebk["PaperId"].iloc[i[1]]))
-    print("\n".join(pairs))
-
-    print("topic no match in gisbok:")
-    for i in range(len(embed_topic_gisbok)):
-        if i not in set(index_very_similar[:,0]):
-            print(embed_topic_gisbok["topic"].iloc[i])
 
