@@ -83,23 +83,13 @@ if __name__ == "__main__":
         similarity_score_matrix = embedding_q.dot(embedded_ebk.T).toarray()
         index_sort = similarity_score_matrix.argsort(axis=-1)
         for i in range(similarity_score_matrix.shape[0]):
-            print("search q:")
+            print("*"*10)
             print(list_of_rows[i])
-            print("title:")
             paper_list_40 = []
             paper_list_0 = []
-            for ii in range(similarity_score_matrix.shape[1]):
-                if similarity_score_matrix[i][index_sort[i][-1 - ii]] > 0.4:
-                    print(ebk["PaperTitle"].iloc[index_sort[i][-1 - ii]])
-                    paper_list_40.append(ebk["PaperId"].iloc[index_sort[i][-1 - ii]])
-                elif similarity_score_matrix[i][index_sort[i][-1 - ii]] > 0:
-                    if ii > 5:
-                        break
-                    try:
-                        print(ebk["PaperTitle"].iloc[index_sort[i][-1 - ii]].encode('utf-8').strip())
-                    except:
-                        pass
-                    paper_list_0.append(ebk["PaperId"].iloc[index_sort[i][-1 - ii]])
+            for ii in range(0,5):
+                print(ebk["PaperTitle"].iloc[index_sort[i][-1 - ii]])
+
 
 
 
